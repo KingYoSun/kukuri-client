@@ -20,6 +20,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "puppeteer": "^24.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.3.0",
@@ -28,6 +29,8 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server-brave-search": "^0.6.2",
+    "@modelcontextprotocol/server-puppeteer": "^0.6.2",
     "@shadcn/ui": "^0.0.4",
     "@tauri-apps/cli": "^2",
     "@types/react": "^18.3.1",
@@ -39,5 +42,13 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~5.6.2",
     "vite": "^6.0.3"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "puppeteer"
+    ],
+    "onlyBuiltDependencies": [
+      "puppeteer"
+    ]
   }
 }

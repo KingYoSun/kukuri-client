@@ -1,0 +1,42 @@
+{
+  "name": "Kukuri Client Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "hostRequirements": {
+    "memory": "12gb"
+  },
+  "runArgs": [
+    "--cap-add=SYS_ADMIN"
+  ],
+  "securityOpt": [
+    "seccomp=unconfined"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vadimcn.vscode-lldb",
+        "tauri-apps.tauri-vscode",
+        "rust-lang.rust-analyzer",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "RooVeterinaryInc.roo-cline",
+        "fill-labs.dependi"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "rust-analyzer.checkOnSave.command": "clippy"
+      }
+    }
+  },
+  "forwardPorts": [5173],
+  "postCreateCommand": "npm install -g pnpm && pnpm install && RUSTFLAGS=\"-C link-arg=-Wl,--no-keep-memory\" cargo install tauri-cli -j1",
+  "remoteUser": "vscode"
+}

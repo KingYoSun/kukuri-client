@@ -1,7 +1,7 @@
 mod commands;
 mod models;
-mod storage;
 mod network;
+mod storage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -15,13 +15,11 @@ pub fn run() {
             commands::auth::create_user,
             commands::auth::sign_in,
             commands::auth::list_users,
-            
             // 投稿コマンド
             commands::post::create_post,
             commands::post::get_posts,
             commands::post::get_user_posts,
             commands::post::search_posts,
-            
             // プロフィールコマンド
             commands::profile::get_profile,
             commands::profile::update_profile,
