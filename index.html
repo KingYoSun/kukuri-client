@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kukuri - Choose your connections, control your network</title>
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --primary: 222.2 47.4% 11.2%;
+      --primary-foreground: 210 40% 98%;
+    }
+    
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      --primary: 210 40% 98%;
+      --primary-foreground: 222.2 47.4% 11.2%;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      flex: 1;
+    }
+    
+    header {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 1rem 0;
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .tagline {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-left: 1rem;
+    }
+    
+    .auth-container {
+      display: flex;
+      flex-direction: column;
+      max-width: 400px;
+      margin: 4rem auto;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 0.25rem;
+      font-size: 1rem;
+    }
+    
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border: none;
+      border-radius: 0.25rem;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+    }
+    
+    .toggle-mode {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .toggle-mode a {
+      color: hsl(var(--primary));
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="header-content">
+        <div>
+          <span class="logo">Kukuri</span>
+          <span class="tagline">Choose your connections, control your network</span>
+        </div>
+      </div>
+    </div>
+  </header>
+  
+  <main class="container">
+    <div class="auth-container">
+      <h1>ログイン</h1>
+      
+      <div class="form-group">
+        <label for="userId">ユーザーID</label>
+        <input type="text" id="userId" placeholder="ユーザーIDを入力">
+      </div>
+      
+      <button>ログイン</button>
+      
+      <div class="toggle-mode">
+        <a href="#" id="toggle-auth-mode">新しいアカウントを作成</a>
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    // 認証モード切り替え
+    const toggleAuthMode = document.getElementById('toggle-auth-mode');
+    const authTitle = document.querySelector('h1');
+    const authButton = document.querySelector('button');
+    let isLoginMode = true;
+    
+    toggleAuthMode.addEventListener('click', (e) => {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      
+      if (isLoginMode) {
+        authTitle.textContent = 'ログイン';
+        authButton.textContent = 'ログイン';
+        toggleAuthMode.textContent = '新しいアカウントを作成';
+      } else {
+        authTitle.textContent = 'アカウント作成';
+        authButton.textContent = 'アカウント作成';
+        toggleAuthMode.textContent = '既存のアカウントでログイン';
+      }
+    });
+  </script>
+</body>
+</html>
