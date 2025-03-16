@@ -28,3 +28,6 @@ dist-ssr
 
 # tauri-docs
 tauri-docs
+
+# playwright
+playwright-report

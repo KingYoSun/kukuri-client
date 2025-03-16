@@ -6,6 +6,7 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
+use crate::commands::settings::Settings;
 use crate::models::post::Post;
 use crate::models::user::User;
 
@@ -23,6 +24,7 @@ use crate::models::user::User;
 struct AppStorage {
     users: HashMap<String, User>,
     posts: HashMap<String, Post>,
+    settings: HashMap<String, String>,
     // 将来的な拡張のためのフィールド
     version: u32,
     last_sync: Option<i64>,
@@ -35,6 +37,7 @@ static STORAGE: Lazy<Mutex<AppStorage>> = Lazy::new(|| {
         let storage = AppStorage {
             users: HashMap::new(),
             posts: HashMap::new(),
+            settings: HashMap::new(),
             version: 1,
             last_sync: Some(chrono::Utc::now().timestamp()),
         };
@@ -79,6 +82,7 @@ fn load_or_create_storage() -> Result<AppStorage, String> {
         let storage = AppStorage {
             users: HashMap::new(),
             posts: HashMap::new(),
+            settings: HashMap::new(),
             version: 1,
             last_sync: Some(chrono::Utc::now().timestamp()),
         };
@@ -236,5 +240,38 @@ pub fn get_heads() -> Result<Vec<String>, String> {
     // 実際の実装では、Automergeを使用してヘッドハッシュを取得します
     Ok(Vec::new())
 }
+/// 設定保存
+///
+/// アプリケーション設定をストレージに保存します。
+pub fn save_settings(settings_key: &str, settings: &Settings) -> Result<(), String> {
+    let mut storage = STORAGE.lock().unwrap();
 
+    // 設定をJSONにシリアライズ
+    let settings_json = serde_json::to_string(settings)
+        .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+
+    // 設定をストレージに保存
+    storage
+        .settings
+        .insert(settings_key.to_string(), settings_json);
+    storage.last_sync = Some(chrono::Utc::now().timestamp());
+
+    save_storage(&storage)
+}
+
+/// 設定取得
+///
+/// アプリケーション設定をストレージから取得します。
+pub fn get_settings(settings_key: &str) -> Result<Option<Settings>, String> {
+    let storage = STORAGE.lock().unwrap();
+
+    match storage.settings.get(settings_key) {
+        Some(settings_json) => serde_json::from_str(settings_json)
+            .map_err(|e| format!("Failed to deserialize settings: {}", e))
+            .map(Some),
+        None => Ok(None),
+    }
+}
+
+// テストコードは省略
 // テストコードは省略

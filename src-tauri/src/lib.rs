@@ -25,6 +25,9 @@ pub fn run() {
             commands::profile::update_profile,
             commands::profile::follow_user,
             commands::profile::unfollow_user,
+            // 設定コマンド
+            commands::settings::get_settings,
+            commands::settings::update_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

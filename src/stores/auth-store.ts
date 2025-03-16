@@ -33,14 +33,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   createUser: async (displayName: string, bio?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const result: { user_id: string; success: boolean; message?: string } = await invoke('create_user', {
+      const result: { userId: string; success: boolean; message?: string } = await invoke('create_user', {
         displayName,
         bio,
       });
 
       if (result.success) {
         // Fetch the user profile
-        const user: User | null = await invoke('get_profile', { userId: result.user_id });
+        const user: User | null = await invoke('get_profile', { userId: result.userId });
         
         if (user) {
           set({ user, isAuthenticated: true, isLoading: false });
@@ -71,13 +71,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   signIn: async (userId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const result: { user_id: string; success: boolean; message?: string } = await invoke('sign_in', {
+      const result: { userId: string; success: boolean; message?: string } = await invoke('sign_in', {
         userId,
       });
 
       if (result.success) {
         // Fetch the user profile
-        const user: User | null = await invoke('get_profile', { userId: result.user_id });
+        const user: User | null = await invoke('get_profile', { userId: result.userId });
         
         if (user) {
           set({ user, isAuthenticated: true, isLoading: false });
