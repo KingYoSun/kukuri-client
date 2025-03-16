@@ -2,134 +2,238 @@ use crate::models::user::User;
 use serde::{Deserialize, Serialize};
 use tauri::command;
 
+/// プロフィールエラー
+///
+/// プロフィール操作中に発生する可能性のあるエラーを定義します。
+#[derive(Debug, thiserror::Error)]
+pub enum ProfileError {
+    /// ストレージエラー
+    #[error("Storage error: {0}")]
+    Storage(String),
+
+    /// ネットワークエラー
+    #[error("Network error: {0}")]
+    Network(String),
+
+    /// ユーザーが見つからない
+    #[error("User not found")]
+    UserNotFound,
+
+    /// 入力検証エラー
+    #[error("Validation error: {0}")]
+    Validation(String),
+
+    /// その他のエラー
+    #[error("{0}")]
+    Other(String),
+}
+
+/// エラーのシリアライズ実装
+impl Serialize for ProfileError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_ref())
+    }
+}
+
+/// プロフィール更新結果
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProfileUpdateResult {
     pub success: bool,
     pub message: Option<String>,
 }
 
+/// プロフィール取得コマンド
+///
+/// 指定されたユーザーIDのプロフィールを取得します。
 #[command]
-pub async fn get_profile(user_id: String) -> Result<Option<User>, String> {
-    crate::storage::automerge::get_user(&user_id)
-        .map_err(|e| format!("Failed to retrieve user profile: {}", e))
+pub async fn get_profile(user_id: String) -> Result<Option<User>, ProfileError> {
+    crate::storage::automerge::get_user(&user_id).map_err(|e| ProfileError::Storage(e))
 }
 
+/// プロフィール更新コマンド
+///
+/// ユーザープロフィールを更新します。
 #[command]
 pub async fn update_profile(
-    user_id: String, 
-    display_name: Option<String>, 
+    user_id: String,
+    display_name: Option<String>,
     bio: Option<String>,
-    avatar: Option<String>
-) -> Result<ProfileUpdateResult, String> {
-    // 1. 既存のプロフィールを取得
-    match crate::storage::automerge::get_user(&user_id) {
-        Ok(Some(mut user)) => {
-            // 2. 提供されたフィールドを更新
-            if let Some(display_name) = display_name {
-                user.display_name = display_name;
-            }
-            
-            if let Some(bio) = bio {
-                user.bio = bio;
-            }
-            
-            if let Some(avatar) = avatar {
-                user.avatar = Some(avatar);
-            }
-            
-            // 3. 更新されたプロフィールを保存
-            match crate::storage::automerge::save_user(&user) {
-                Ok(_) => {
-                    // 4. iroh-gossipでプロフィール更新を発信
-                    match crate::network::iroh::publish_profile(&user) {
-                        Ok(_) => Ok(ProfileUpdateResult {
-                            success: true,
-                            message: None,
-                        }),
-                        Err(e) => {
-                            // ネットワーク発信に失敗してもプロフィールは更新されている
-                            Ok(ProfileUpdateResult {
-                                success: true,
-                                message: Some(format!("Profile updated but failed to publish: {}", e)),
-                            })
-                        }
-                    }
-                }
-                Err(e) => Err(format!("Failed to save updated profile: {}", e)),
-            }
+    avatar: Option<String>,
+) -> Result<ProfileUpdateResult, ProfileError> {
+    // 入力検証
+    if let Some(ref display_name) = display_name {
+        if display_name.trim().is_empty() {
+            return Err(ProfileError::Validation(
+                "Display name cannot be empty".to_string(),
+            ));
         }
-        Ok(None) => Err("User profile not found".to_string()),
-        Err(e) => Err(format!("Failed to retrieve user profile: {}", e)),
+        if display_name.len() > 50 {
+            return Err(ProfileError::Validation(
+                "Display name exceeds maximum length of 50 characters".to_string(),
+            ));
+        }
+    }
+
+    if let Some(ref bio) = bio {
+        if bio.len() > 160 {
+            return Err(ProfileError::Validation(
+                "Bio exceeds maximum length of 160 characters".to_string(),
+            ));
+        }
+    }
+
+    // 1. 既存のプロフィールを取得
+    let user = crate::storage::automerge::get_user(&user_id)
+        .map_err(|e| ProfileError::Storage(e))?
+        .ok_or(ProfileError::UserNotFound)?;
+
+    // 2. 提供されたフィールドを更新
+    let mut updated_user = user.clone();
+
+    if let Some(display_name) = display_name {
+        updated_user.display_name = display_name;
+    }
+
+    if let Some(bio) = bio {
+        updated_user.bio = bio;
+    }
+
+    if let Some(avatar) = avatar {
+        updated_user.avatar = Some(avatar);
+    }
+
+    // 3. 更新されたプロフィールを保存
+    crate::storage::automerge::save_user(&updated_user).map_err(|e| ProfileError::Storage(e))?;
+
+    // 4. iroh-gossipでプロフィール更新を発信
+    match crate::network::iroh::publish_profile(&updated_user) {
+        Ok(_) => Ok(ProfileUpdateResult {
+            success: true,
+            message: None,
+        }),
+        Err(e) => {
+            // ネットワーク発信に失敗してもプロフィールは更新されている
+            println!("Warning: Failed to publish profile update: {}", e);
+            Ok(ProfileUpdateResult {
+                success: true,
+                message: Some(format!("Profile updated but failed to publish: {}", e)),
+            })
+        }
     }
 }
 
+/// フォローコマンド
+///
+/// 指定されたユーザーをフォローします。
 #[command]
-pub async fn follow_user(user_id: String, target_user_id: String) -> Result<ProfileUpdateResult, String> {
+pub async fn follow_user(
+    user_id: String,
+    target_user_id: String,
+) -> Result<ProfileUpdateResult, ProfileError> {
+    // 自分自身をフォローしようとしていないか確認
+    if user_id == target_user_id {
+        return Err(ProfileError::Validation(
+            "Cannot follow yourself".to_string(),
+        ));
+    }
+
     // 1. 現在のユーザープロフィールを取得
-    match crate::storage::automerge::get_user(&user_id) {
-        Ok(Some(mut user)) => {
-            // 2. フォローリストに追加（重複確認）
-            if !user.following.contains(&target_user_id) {
-                user.following.push(target_user_id.clone());
-                
-                // 3. 更新されたプロフィールを保存
-                match crate::storage::automerge::save_user(&user) {
-                    Ok(_) => {
-                        // 4. フォロー関係を発信
-                        match crate::network::iroh::publish_follow(&user_id, &target_user_id) {
-                            Ok(_) => Ok(ProfileUpdateResult {
-                                success: true,
-                                message: None,
-                            }),
-                            Err(e) => {
-                                Ok(ProfileUpdateResult {
-                                    success: true,
-                                    message: Some(format!("Follow successful but failed to publish: {}", e)),
-                                })
-                            }
-                        }
-                    }
-                    Err(e) => Err(format!("Failed to save follow relationship: {}", e)),
-                }
-            } else {
-                // 既にフォロー済み
+    let user = crate::storage::automerge::get_user(&user_id)
+        .map_err(|e| ProfileError::Storage(e))?
+        .ok_or(ProfileError::UserNotFound)?;
+
+    // 2. フォローリストに追加（重複確認）
+    let mut updated_user = user.clone();
+
+    if !updated_user.following.contains(&target_user_id) {
+        // ターゲットユーザーが存在するか確認
+        let target_exists = crate::storage::automerge::get_user(&target_user_id)
+            .map_err(|e| ProfileError::Storage(e))?
+            .is_some();
+
+        if !target_exists {
+            return Err(ProfileError::UserNotFound);
+        }
+
+        updated_user.following.push(target_user_id.clone());
+
+        // 3. 更新されたプロフィールを保存
+        crate::storage::automerge::save_user(&updated_user)
+            .map_err(|e| ProfileError::Storage(e))?;
+
+        // 4. フォロー関係を発信
+        match crate::network::iroh::publish_follow(&user_id, &target_user_id) {
+            Ok(_) => Ok(ProfileUpdateResult {
+                success: true,
+                message: None,
+            }),
+            Err(e) => {
+                println!("Warning: Failed to publish follow relationship: {}", e);
                 Ok(ProfileUpdateResult {
                     success: true,
-                    message: Some("Already following this user".to_string()),
+                    message: Some(format!("Follow successful but failed to publish: {}", e)),
                 })
             }
         }
-        Ok(None) => Err("User profile not found".to_string()),
-        Err(e) => Err(format!("Failed to retrieve user profile: {}", e)),
+    } else {
+        // 既にフォロー済み
+        Ok(ProfileUpdateResult {
+            success: true,
+            message: Some("Already following this user".to_string()),
+        })
     }
 }
 
+/// フォロー解除コマンド
+///
+/// 指定されたユーザーのフォローを解除します。
 #[command]
-pub async fn unfollow_user(user_id: String, target_user_id: String) -> Result<ProfileUpdateResult, String> {
-    // フォロー解除の実装（followの逆操作）
-    match crate::storage::automerge::get_user(&user_id) {
-        Ok(Some(mut user)) => {
-            user.following.retain(|id| id != &target_user_id);
-            
-            match crate::storage::automerge::save_user(&user) {
-                Ok(_) => {
-                    match crate::network::iroh::publish_unfollow(&user_id, &target_user_id) {
-                        Ok(_) => Ok(ProfileUpdateResult {
-                            success: true,
-                            message: None,
-                        }),
-                        Err(e) => {
-                            Ok(ProfileUpdateResult {
-                                success: true,
-                                message: Some(format!("Unfollow successful but failed to publish: {}", e)),
-                            })
-                        }
-                    }
-                }
-                Err(e) => Err(format!("Failed to save unfollow relationship: {}", e)),
+pub async fn unfollow_user(
+    user_id: String,
+    target_user_id: String,
+) -> Result<ProfileUpdateResult, ProfileError> {
+    // 1. 現在のユーザープロフィールを取得
+    let user = crate::storage::automerge::get_user(&user_id)
+        .map_err(|e| ProfileError::Storage(e))?
+        .ok_or(ProfileError::UserNotFound)?;
+
+    // 2. フォローリストから削除
+    let mut updated_user = user.clone();
+
+    // フォローしているかどうかを確認
+    let was_following = updated_user.following.contains(&target_user_id);
+
+    updated_user.following.retain(|id| id != &target_user_id);
+
+    // 3. 更新されたプロフィールを保存
+    crate::storage::automerge::save_user(&updated_user).map_err(|e| ProfileError::Storage(e))?;
+
+    // 4. フォロー解除を発信
+    match crate::network::iroh::publish_unfollow(&user_id, &target_user_id) {
+        Ok(_) => {
+            if was_following {
+                Ok(ProfileUpdateResult {
+                    success: true,
+                    message: None,
+                })
+            } else {
+                Ok(ProfileUpdateResult {
+                    success: true,
+                    message: Some("User was not being followed".to_string()),
+                })
             }
         }
-        Ok(None) => Err("User profile not found".to_string()),
-        Err(e) => Err(format!("Failed to retrieve user profile: {}", e)),
+        Err(e) => {
+            println!("Warning: Failed to publish unfollow relationship: {}", e);
+            Ok(ProfileUpdateResult {
+                success: true,
+                message: Some(format!("Unfollow successful but failed to publish: {}", e)),
+            })
+        }
     }
 }
+
+// テストコードは省略

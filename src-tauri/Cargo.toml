@@ -18,18 +18,24 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-# Tauriの依存関係を最小限に抑える
+# Tauriの依存関係
 tauri = { version = "2", default-features = false , features = ["wry"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 once_cell = "1.19.0"
 
-# 追加の依存関係
+# エラーハンドリング
+thiserror = "1.0.56"
+
+# 暗号化と認証
 base64 = "0.21.0"
 ring = "0.17.0"
 uuid = { version = "1.3.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.24", features = ["serde"] }
+
+# テスト用
+tokio = { version = "1.36.0", features = ["rt", "macros"], optional = true }
 
 # コンパイラの内部エラーを回避するための設定
 [profile.dev]
@@ -49,3 +55,7 @@ strip = true  # デバッグシンボルを削除
 opt-level = "s"  # サイズ最適化
 lto = true  # リンク時最適化
 codegen-units = 1  # コード生成ユニットを最小化
+
+[features]
+# テスト用の機能フラグ
+test-utils = ["tokio"]
