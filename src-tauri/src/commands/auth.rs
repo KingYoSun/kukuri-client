@@ -110,7 +110,7 @@ pub async fn create_user(
         .map_err(|e| AuthError::FileSystem(format!("Failed to save private key: {}", e)))?;
 
     // ネットワークにユーザープロファイルを発信
-    if let Err(e) = crate::network::iroh::publish_profile(&user) {
+    if let Err(e) = crate::network::iroh::publish_profile(&user).await {
         println!("Warning: Failed to publish profile: {}", e);
         // 発信に失敗しても処理は続行
     }

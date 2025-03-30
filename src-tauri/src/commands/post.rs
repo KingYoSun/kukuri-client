@@ -78,7 +78,7 @@ pub async fn create_post(author_id: String, content: String) -> Result<PostResul
     crate::storage::iroh_docs_sync::save_post(&post).map_err(|e| PostError::Storage(e))?;
 
     // 4. iroh-gossipで投稿を発信
-    match crate::network::iroh::publish_post(&post) {
+    match crate::network::iroh::publish_post(&post).await {
         Ok(_) => Ok(PostResult {
             post_id,
             success: true,

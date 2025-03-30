@@ -110,7 +110,7 @@ pub async fn update_profile(
         .map_err(|e| ProfileError::Storage(e))?;
 
     // 4. iroh-gossipでプロフィール更新を発信
-    match crate::network::publish_profile(&updated_user) {
+    match crate::network::iroh::publish_profile(&updated_user).await {
         Ok(_) => Ok(ProfileUpdateResult {
             success: true,
             message: None,
@@ -166,7 +166,7 @@ pub async fn follow_user(
             .map_err(|e| ProfileError::Storage(e))?;
 
         // 4. フォロー関係を発信
-        match crate::network::publish_follow(&user_id, &target_user_id) {
+        match crate::network::iroh::publish_follow(&user_id, &target_user_id).await {
             Ok(_) => Ok(ProfileUpdateResult {
                 success: true,
                 message: None,
@@ -214,7 +214,7 @@ pub async fn unfollow_user(
         .map_err(|e| ProfileError::Storage(e))?;
 
     // 4. フォロー解除を発信
-    match crate::network::publish_unfollow(&user_id, &target_user_id) {
+    match crate::network::iroh::publish_unfollow(&user_id, &target_user_id).await {
         Ok(_) => {
             if was_following {
                 Ok(ProfileUpdateResult {
