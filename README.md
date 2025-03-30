@@ -21,6 +21,22 @@
 3. VS Codeがコンテナをビルドして開発環境を準備するのを待ちます
 4. 準備完了後、コンテナ内でプロジェクトが開かれます
 
+#### Roo Code MCP設定の永続化
+
+Dev Container内でRoo CodeのMCP（Model Context Protocol）設定を永続化するための仕組みが用意されています。これにより、コンテナが再作成されても設定が保持されます。
+
+- コンテナ作成時に、リポジトリ内の`.devcontainer/mcp-settings/cline_mcp_settings.json`が自動的にRoo Codeの設定ディレクトリにコピーされます
+- MCP設定を変更した後、その変更をリポジトリに保存するには以下のスクリプトを実行します：
+  ```bash
+  .devcontainer/sync-mcp-settings.sh
+  ```
+- 他の開発者が行った設定変更を自分の環境に適用するには以下のスクリプトを実行します：
+  ```bash
+  .devcontainer/apply-mcp-settings.sh
+  ```
+
+これにより、チーム全体で一貫したMCP設定を共有できます。
+
 ### ローカル環境でのセットアップ
 
 Dev Containerを使用しない場合は、以下の手順でローカル環境をセットアップできます。

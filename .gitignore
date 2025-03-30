@@ -26,8 +26,8 @@ dist-ssr
 # pnpm
 .pnpm-store/
 
-# tauri-docs
-tauri-docs
+# references
+references/
 
 # playwright
 playwright-report

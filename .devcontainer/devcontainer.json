@@ -37,6 +37,6 @@
     }
   },
   "forwardPorts": [5173],
-  "postCreateCommand": "npm install -g pnpm && pnpm install && RUSTFLAGS=\"-C link-arg=-Wl,--no-keep-memory\" cargo install tauri-cli -j1",
+  "postCreateCommand": "npm install -g pnpm && pnpm install && RUSTFLAGS=\"-C link-arg=-Wl,--no-keep-memory\" cargo install tauri-cli -j1 && mkdir -p /home/vscode/.vscode-server/data/User/globalStorage/rooveterinaryinc.roo-cline/settings && cp -f /workspaces/kukuri-client/.devcontainer/mcp-settings/cline_mcp_settings.json /home/vscode/.vscode-server/data/User/globalStorage/rooveterinaryinc.roo-cline/settings/",
   "remoteUser": "vscode"
 }
