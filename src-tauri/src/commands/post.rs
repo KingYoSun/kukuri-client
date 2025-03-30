@@ -75,7 +75,7 @@ pub async fn create_post(author_id: String, content: String) -> Result<PostResul
     };
 
     // 3. 投稿を保存
-    crate::storage::automerge::save_post(&post).map_err(|e| PostError::Storage(e))?;
+    crate::storage::iroh_docs_sync::save_post(&post).map_err(|e| PostError::Storage(e))?;
 
     // 4. iroh-gossipで投稿を発信
     match crate::network::iroh::publish_post(&post) {
@@ -107,7 +107,7 @@ pub async fn get_posts(
     let limit = limit.unwrap_or(20);
     let offset = offset.unwrap_or(0);
 
-    crate::storage::automerge::get_posts(limit, offset).map_err(|e| PostError::Storage(e))
+    crate::storage::iroh_docs_sync::get_posts(limit, offset).map_err(|e| PostError::Storage(e))
 }
 
 /// ユーザー投稿取得コマンド
@@ -122,7 +122,7 @@ pub async fn get_user_posts(
     let limit = limit.unwrap_or(20);
     let offset = offset.unwrap_or(0);
 
-    crate::storage::automerge::get_user_posts(&user_id, limit, offset)
+    crate::storage::iroh_docs_sync::get_user_posts(&user_id, limit, offset)
         .map_err(|e| PostError::Storage(e))
 }
 
@@ -141,7 +141,7 @@ pub async fn search_posts(query: String, limit: Option<usize>) -> Result<Vec<Pos
     let limit = limit.unwrap_or(50);
 
     // ローカルの投稿からの簡易検索
-    crate::storage::automerge::search_posts(&query, limit).map_err(|e| PostError::Storage(e))
+    crate::storage::iroh_docs_sync::search_posts(&query, limit).map_err(|e| PostError::Storage(e))
 }
 
 // テストコードは省略

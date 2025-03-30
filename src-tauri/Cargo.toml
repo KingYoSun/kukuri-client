@@ -23,21 +23,21 @@ tauri = { version = "2", default-features = false , features = ["wry"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-once_cell = "1.19.0"
+once_cell = "1.21.3"
 
 # エラーハンドリング
-thiserror = "1.0.56"
+thiserror = "2.0.12"
 
 # 暗号化と認証
-base64 = "0.21.0"
+base64 = "0.22.1"
 ring = "0.17.0"
 uuid = { version = "1.3.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.24", features = ["serde"] }
 
 # テスト用
 tokio = { version = "1.36.0", features = ["rt", "macros", "time"], optional = true }
-tempfile = "3.10.1"
-mockall = "0.12.1"
+tempfile = "3.19.1"
+mockall = "0.13.1"
 test-log = "0.2.15"
 env_logger = "0.11.2"
 

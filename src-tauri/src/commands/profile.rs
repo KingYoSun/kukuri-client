@@ -50,7 +50,7 @@ pub struct ProfileUpdateResult {
 /// 指定されたユーザーIDのプロフィールを取得します。
 #[command]
 pub async fn get_profile(user_id: String) -> Result<Option<User>, ProfileError> {
-    crate::storage::automerge::get_user(&user_id).map_err(|e| ProfileError::Storage(e))
+    crate::storage::iroh_docs_sync::get_user(&user_id).map_err(|e| ProfileError::Storage(e))
 }
 
 /// プロフィール更新コマンド
@@ -86,7 +86,7 @@ pub async fn update_profile(
     }
 
     // 1. 既存のプロフィールを取得
-    let user = crate::storage::automerge::get_user(&user_id)
+    let user = crate::storage::iroh_docs_sync::get_user(&user_id)
         .map_err(|e| ProfileError::Storage(e))?
         .ok_or(ProfileError::UserNotFound)?;
 
@@ -106,10 +106,11 @@ pub async fn update_profile(
     }
 
     // 3. 更新されたプロフィールを保存
-    crate::storage::automerge::save_user(&updated_user).map_err(|e| ProfileError::Storage(e))?;
+    crate::storage::iroh_docs_sync::save_user(&updated_user)
+        .map_err(|e| ProfileError::Storage(e))?;
 
     // 4. iroh-gossipでプロフィール更新を発信
-    match crate::network::iroh::publish_profile(&updated_user) {
+    match crate::network::publish_profile(&updated_user) {
         Ok(_) => Ok(ProfileUpdateResult {
             success: true,
             message: None,
@@ -141,7 +142,7 @@ pub async fn follow_user(
     }
 
     // 1. 現在のユーザープロフィールを取得
-    let user = crate::storage::automerge::get_user(&user_id)
+    let user = crate::storage::iroh_docs_sync::get_user(&user_id)
         .map_err(|e| ProfileError::Storage(e))?
         .ok_or(ProfileError::UserNotFound)?;
 
@@ -150,7 +151,7 @@ pub async fn follow_user(
 
     if !updated_user.following.contains(&target_user_id) {
         // ターゲットユーザーが存在するか確認
-        let target_exists = crate::storage::automerge::get_user(&target_user_id)
+        let target_exists = crate::storage::iroh_docs_sync::get_user(&target_user_id)
             .map_err(|e| ProfileError::Storage(e))?
             .is_some();
 
@@ -161,11 +162,11 @@ pub async fn follow_user(
         updated_user.following.push(target_user_id.clone());
 
         // 3. 更新されたプロフィールを保存
-        crate::storage::automerge::save_user(&updated_user)
+        crate::storage::iroh_docs_sync::save_user(&updated_user)
             .map_err(|e| ProfileError::Storage(e))?;
 
         // 4. フォロー関係を発信
-        match crate::network::iroh::publish_follow(&user_id, &target_user_id) {
+        match crate::network::publish_follow(&user_id, &target_user_id) {
             Ok(_) => Ok(ProfileUpdateResult {
                 success: true,
                 message: None,
@@ -196,7 +197,7 @@ pub async fn unfollow_user(
     target_user_id: String,
 ) -> Result<ProfileUpdateResult, ProfileError> {
     // 1. 現在のユーザープロフィールを取得
-    let user = crate::storage::automerge::get_user(&user_id)
+    let user = crate::storage::iroh_docs_sync::get_user(&user_id)
         .map_err(|e| ProfileError::Storage(e))?
         .ok_or(ProfileError::UserNotFound)?;
 
@@ -209,10 +210,11 @@ pub async fn unfollow_user(
     updated_user.following.retain(|id| id != &target_user_id);
 
     // 3. 更新されたプロフィールを保存
-    crate::storage::automerge::save_user(&updated_user).map_err(|e| ProfileError::Storage(e))?;
+    crate::storage::iroh_docs_sync::save_user(&updated_user)
+        .map_err(|e| ProfileError::Storage(e))?;
 
     // 4. フォロー解除を発信
-    match crate::network::iroh::publish_unfollow(&user_id, &target_user_id) {
+    match crate::network::publish_unfollow(&user_id, &target_user_id) {
         Ok(_) => {
             if was_following {
                 Ok(ProfileUpdateResult {

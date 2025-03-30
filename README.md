@@ -171,3 +171,37 @@ import { invoke } from '@tauri-apps/api/core';
 // テスト内でモックの実装を設定
 (invoke as any).mockResolvedValue({ success: true });
 ```
+
+## 技術スタック
+
+このプロジェクトは以下の主要な技術を使用しています：
+
+- **フロントエンド**: React、TypeScript、Zustand、TanStack Query
+- **バックエンド**: Tauri、Rust
+- **データストレージ**: iroh-docs（分散型データストレージ）
+- **P2P通信**: iroh-gossip（分散型メッセージング）
+- **コンテンツストレージ**: iroh-blobs（コンテンツアドレス可能なストレージ）
+
+## プロジェクト構造
+
+```
+src/                  # フロントエンドのソースコード
+├── assets/           # 静的アセット
+├── components/       # UIコンポーネント
+├── hooks/            # カスタムフック
+├── lib/              # ユーティリティ関数
+├── models/           # データモデル
+├── pages/            # ページコンポーネント
+├── services/         # サービス
+└── stores/           # Zustandストア
+
+src-tauri/            # バックエンドのソースコード
+├── src/              # Rustのソースコード
+│   ├── commands/     # Tauriコマンド
+│   ├── models/       # データモデル
+│   ├── storage/      # ストレージレイヤー
+│   └── network/      # ネットワークレイヤー
+└── tests/            # Rustのテスト
+
+docs/                 # プロジェクトドキュメント
+memory-bank/          # プロジェクトメモリバンク

@@ -1,3 +1,4 @@
+use crate::storage::HasId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -10,4 +11,10 @@ pub struct User {
     pub following: Vec<String>,
     pub followers: Vec<String>,
     pub created_at: i64,
+}
+
+impl HasId for User {
+    fn id(&self) -> &str {
+        &self.id
+    }
 }

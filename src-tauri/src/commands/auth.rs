@@ -96,7 +96,7 @@ pub async fn create_user(
     };
 
     // StorageManagerを使用してユーザーを保存
-    crate::storage::automerge::save_user(&user).map_err(|e| AuthError::Storage(e))?;
+    crate::storage::iroh_docs_sync::save_user(&user).map_err(|e| AuthError::Storage(e))?;
 
     // 4. 秘密鍵を安全に保存
     let private_key_b64 = general_purpose::STANDARD.encode(pkcs8_bytes);
@@ -136,7 +136,7 @@ pub async fn sign_in(user_id: String) -> Result<AuthResult, AuthError> {
     }
 
     // ユーザープロファイルを取得して検証
-    match crate::storage::automerge::get_user(&user_id) {
+    match crate::storage::iroh_docs_sync::get_user(&user_id) {
         Ok(Some(_user)) => {
             // ネットワーク状態を取得
             let network_status = crate::network::iroh::get_network_status()
@@ -187,7 +187,7 @@ pub async fn list_users() -> Result<Vec<UserListItem>, AuthError> {
             if let Some(file_stem) = path.file_stem() {
                 if let Some(user_id) = file_stem.to_str() {
                     // ユーザープロファイルを取得
-                    if let Ok(Some(user)) = crate::storage::automerge::get_user(user_id) {
+                    if let Ok(Some(user)) = crate::storage::iroh_docs_sync::get_user(user_id) {
                         users.push(UserListItem {
                             id: user.id,
                             display_name: user.display_name,

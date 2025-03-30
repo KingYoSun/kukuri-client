@@ -1,6 +1,6 @@
 mod commands;
 mod models;
-mod network;
+pub mod network;
 mod storage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -9,7 +9,6 @@ pub fn run() {
     let _ = network::iroh::initialize_network();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             // 認証コマンド
             commands::auth::create_user,

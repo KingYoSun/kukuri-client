@@ -60,7 +60,7 @@ pub async fn get_settings(user_id: Option<String>) -> Result<Settings, SettingsE
     };
 
     // ストレージから設定を取得
-    match crate::storage::automerge::get_settings(&settings_key) {
+    match crate::storage::iroh_docs_sync::get_settings(&settings_key) {
         Ok(Some(settings)) => Ok(settings),
         Ok(None) => {
             // 設定が存在しない場合はデフォルト設定を返す
@@ -96,7 +96,7 @@ pub async fn update_settings(
     };
 
     // 現在の設定を取得
-    let current_settings = match crate::storage::automerge::get_settings(&settings_key) {
+    let current_settings = match crate::storage::iroh_docs_sync::get_settings(&settings_key) {
         Ok(Some(settings)) => settings,
         Ok(None) => Settings {
             user_id: user_id.clone(),
@@ -120,7 +120,7 @@ pub async fn update_settings(
     };
 
     // 更新された設定を保存
-    match crate::storage::automerge::save_settings(&settings_key, &updated_settings) {
+    match crate::storage::iroh_docs_sync::save_settings(&settings_key, &updated_settings) {
         Ok(_) => Ok(SettingsUpdateResult {
             success: true,
             message: None,

@@ -19,7 +19,8 @@
 - **アプリケーションフレームワーク**: Tauri 2.x
 - **言語**: Rust
 - **分散通信プロトコル**: iroh-gossip
-- **データストレージ**: Automerge 2.2.8
+- **データストレージ**: iroh-docs
+- **コンテンツストレージ**: iroh-blobs
 - **リレーインフラストラクチャ**: Cloudflare Workers
 
 ### テスト
@@ -76,7 +77,7 @@ npm create tauri-app@latest .
 
 # 必要な依存関係のインストール
 npm install zustand @tanstack/react-query react-router-dom zod
-npm install @tauri-apps/api automerge iroh-gossip
+npm install @tauri-apps/api iroh iroh-gossip iroh-docs iroh-blobs
 
 # 開発ツールのインストール
 npm install -D tailwindcss postcss autoprefixer shadcn-ui vitest
@@ -97,17 +98,16 @@ Tauriは、Webテクノロジーを使用してデスクトップアプリケー
   - セキュリティ重視の設計
   - Rustバックエンドとの統合
 
-### Automerge
+### iroh-docs
 
-Automergeは、CRDTを実装したライブラリで、異なるユーザーが同時に変更を加えることができ、自動的にマージできるJSON風のデータ構造を提供します。
+iroh-docsは、マルチディメンショナルなキーバリュードキュメントを提供するライブラリで、効率的な同期プロトコルを持っています。
 
-- **バージョン**: 2.2.8
 - **主な特徴**:
-  - 効率的なCRDT実装
-  - 自動的な競合解決
+  - 効率的な同期プロトコル
+  - レプリカを使用したデータ同期
+  - 認証と暗号化
   - オフライン対応
-  - 複数デバイス間の同期サポート
-  - Rust実装とJavaScript/WASM APIの提供
+  - iroh-gossipとiroh-blobsとの統合
 
 ### iroh-gossip
 
@@ -118,6 +118,16 @@ iroh-gossipは、分散型ネットワークのためのP2P通信プロトコル
   - 効率的なP2P通信
   - スケーラブルな設計
   - 低レイテンシー
+
+### iroh-blobs
+
+iroh-blobsは、コンテンツアドレス可能なバイナリデータストレージを提供するライブラリです。
+
+- **主な特徴**:
+  - コンテンツアドレス可能なストレージ
+  - 効率的なデータ転送
+  - 重複排除
+  - iroh-docsとの統合
 
 ### React + TypeScript
 
@@ -146,8 +156,8 @@ Zustandは、軽量で使いやすい状態管理ライブラリです。Redux�
 
 ### パフォーマンス
 
-- **メモリ使用量**: Automergeのデータ構造は、大規模なデータセットでメモリ使用量が増加する可能性があります。データの分割と効率的な管理が必要です。
-- **CPU使用量**: CRDTの操作やP2P通信は、CPU使用量が増加する可能性があります。効率的なアルゴリズムと最適化が必要です。
+- **メモリ使用量**: iroh-docsのデータ構造は、大規模なデータセットでメモリ使用量が増加する可能性があります。データの分割と効率的な管理が必要です。
+- **CPU使用量**: P2P通信は、CPU使用量が増加する可能性があります。効率的なアルゴリズムと最適化が必要です。
 - **ネットワーク帯域**: P2P通信は、ネットワーク帯域を消費します。効率的なデータ同期メカニズムが必要です。
 
 ### セキュリティ
