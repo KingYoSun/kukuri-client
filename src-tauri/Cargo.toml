@@ -55,14 +55,6 @@ mockall = "0.13.1"
 test-log = "0.2.15"
 env_logger = "0.11.2"
 
-# コンパイラの内部エラーを回避するための設定
-[profile.dev]
-# 最適化レベルを下げる
-opt-level = 0
-# コード生成ユニットを小さくする
-codegen-units = 16
-# デバッグ情報を含める
-debug = true
 # SIMD関連の最適化を無効にする
 [profile.dev.package."*"]
 opt-level = 0

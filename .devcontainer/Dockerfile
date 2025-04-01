@@ -33,6 +33,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     libxrandr2 \
     libgbm1 \
     libasound2 \
+    # 高速リンカーとコンパイラを追加
+    mold clang \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
