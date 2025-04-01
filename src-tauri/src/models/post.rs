@@ -1,4 +1,4 @@
-use crate::storage::{HasId, Post as PostTrait};
+use crate::storage::traits::{HasId, PostEntry as PostTrait}; // Correct path and renamed trait
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,6 +19,7 @@ impl HasId for Post {
 }
 
 impl PostTrait for Post {
+    // Implement the renamed trait
     fn author_id(&self) -> &str {
         &self.author_id
     }

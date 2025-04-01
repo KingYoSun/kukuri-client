@@ -3425,9 +3425,11 @@ dependencies = [
 name = "kukuri-client"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-channel",
  "base64 0.22.1",
  "blake3",
+ "bytes",
  "chrono",
  "env_logger",
  "futures-lite",
@@ -3435,8 +3437,10 @@ dependencies = [
  "iroh-blobs",
  "iroh-docs",
  "iroh-gossip",
+ "lazy_static",
  "mockall",
  "once_cell",
+ "quic-rpc",
  "ring",
  "serde",
  "serde_json",

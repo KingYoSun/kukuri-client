@@ -28,6 +28,13 @@ pub enum ProfileError {
     Other(String),
 }
 
+// Implement From<StorageError> for ProfileError
+impl From<crate::storage::StorageError> for ProfileError {
+    fn from(err: crate::storage::StorageError) -> Self {
+        ProfileError::Storage(err.to_string())
+    }
+}
+
 /// エラーのシリアライズ実装
 impl Serialize for ProfileError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -50,7 +57,9 @@ pub struct ProfileUpdateResult {
 /// 指定されたユーザーIDのプロフィールを取得します。
 #[command]
 pub async fn get_profile(user_id: String) -> Result<Option<User>, ProfileError> {
-    crate::storage::iroh_docs_sync::get_user(&user_id).map_err(|e| ProfileError::Storage(e))
+    crate::storage::repository::user_repository::get_user(&user_id)
+        .await
+        .map_err(Into::into) // Convert StorageError using From impl
 }
 
 /// プロフィール更新コマンド
@@ -86,8 +95,9 @@ pub async fn update_profile(
     }
 
     // 1. 既存のプロフィールを取得
-    let user = crate::storage::iroh_docs_sync::get_user(&user_id)
-        .map_err(|e| ProfileError::Storage(e))?
+    let user = crate::storage::repository::user_repository::get_user(&user_id)
+        .await // Updated path and added .await
+        .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))? // Convert error to string
         .ok_or(ProfileError::UserNotFound)?;
 
     // 2. 提供されたフィールドを更新
@@ -106,8 +116,9 @@ pub async fn update_profile(
     }
 
     // 3. 更新されたプロフィールを保存
-    crate::storage::iroh_docs_sync::save_user(&updated_user)
-        .map_err(|e| ProfileError::Storage(e))?;
+    crate::storage::repository::user_repository::save_user(&updated_user)
+        .await // Updated path and added .await
+        .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))?; // Convert error to string
 
     // 4. iroh-gossipでプロフィール更新を発信
     match crate::network::iroh::publish_profile(&updated_user).await {
@@ -142,8 +153,9 @@ pub async fn follow_user(
     }
 
     // 1. 現在のユーザープロフィールを取得
-    let user = crate::storage::iroh_docs_sync::get_user(&user_id)
-        .map_err(|e| ProfileError::Storage(e))?
+    let user = crate::storage::repository::user_repository::get_user(&user_id)
+        .await // Updated path and added .await
+        .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))? // Convert error to string
         .ok_or(ProfileError::UserNotFound)?;
 
     // 2. フォローリストに追加（重複確認）
@@ -151,8 +163,9 @@ pub async fn follow_user(
 
     if !updated_user.following.contains(&target_user_id) {
         // ターゲットユーザーが存在するか確認
-        let target_exists = crate::storage::iroh_docs_sync::get_user(&target_user_id)
-            .map_err(|e| ProfileError::Storage(e))?
+        let target_exists = crate::storage::repository::user_repository::get_user(&target_user_id)
+            .await // Updated path and added .await
+            .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))? // Convert error to string
             .is_some();
 
         if !target_exists {
@@ -162,8 +175,9 @@ pub async fn follow_user(
         updated_user.following.push(target_user_id.clone());
 
         // 3. 更新されたプロフィールを保存
-        crate::storage::iroh_docs_sync::save_user(&updated_user)
-            .map_err(|e| ProfileError::Storage(e))?;
+        crate::storage::repository::user_repository::save_user(&updated_user)
+            .await // Updated path and added .await
+            .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))?; // Convert error to string
 
         // 4. フォロー関係を発信
         match crate::network::iroh::publish_follow(&user_id, &target_user_id).await {
@@ -197,8 +211,9 @@ pub async fn unfollow_user(
     target_user_id: String,
 ) -> Result<ProfileUpdateResult, ProfileError> {
     // 1. 現在のユーザープロフィールを取得
-    let user = crate::storage::iroh_docs_sync::get_user(&user_id)
-        .map_err(|e| ProfileError::Storage(e))?
+    let user = crate::storage::repository::user_repository::get_user(&user_id)
+        .await // Updated path and added .await
+        .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))? // Convert error to string
         .ok_or(ProfileError::UserNotFound)?;
 
     // 2. フォローリストから削除
@@ -210,8 +225,9 @@ pub async fn unfollow_user(
     updated_user.following.retain(|id| id != &target_user_id);
 
     // 3. 更新されたプロフィールを保存
-    crate::storage::iroh_docs_sync::save_user(&updated_user)
-        .map_err(|e| ProfileError::Storage(e))?;
+    crate::storage::repository::user_repository::save_user(&updated_user)
+        .await // Updated path and added .await
+        .map_err(|e: crate::storage::StorageError| ProfileError::Storage(e.to_string()))?; // Convert error to string
 
     // 4. フォロー解除を発信
     match crate::network::iroh::publish_unfollow(&user_id, &target_user_id).await {

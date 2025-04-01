@@ -17,8 +17,7 @@ pub enum AuthError {
 
     /// ストレージエラー
     #[error("Storage error: {0}")]
-    Storage(String),
-
+    Storage(String), // Assumes this variant exists
     /// ファイルシステムエラー
     #[error("File system error: {0}")]
     FileSystem(String),
@@ -34,6 +33,15 @@ pub enum AuthError {
     /// その他のエラー
     #[error("{0}")]
     Other(String),
+}
+
+// Implement From<StorageError> for AuthError (Moved outside the enum definition)
+impl From<crate::storage::StorageError> for AuthError {
+    fn from(err: crate::storage::StorageError) -> Self {
+        // Convert StorageError to the appropriate AuthError variant
+        // For now, map all storage errors to AuthError::Storage
+        AuthError::Storage(err.to_string())
+    }
 }
 
 /// エラーのシリアライズ実装
@@ -96,7 +104,7 @@ pub async fn create_user(
     };
 
     // StorageManagerを使用してユーザーを保存
-    crate::storage::iroh_docs_sync::save_user(&user).map_err(|e| AuthError::Storage(e))?;
+    crate::storage::repository::user_repository::save_user(&user).await?; // Updated path and added .await
 
     // 4. 秘密鍵を安全に保存
     let private_key_b64 = general_purpose::STANDARD.encode(pkcs8_bytes);
@@ -136,7 +144,8 @@ pub async fn sign_in(user_id: String) -> Result<AuthResult, AuthError> {
     }
 
     // ユーザープロファイルを取得して検証
-    match crate::storage::iroh_docs_sync::get_user(&user_id) {
+    match crate::storage::repository::user_repository::get_user(&user_id).await {
+        // Updated path and added .await
         Ok(Some(_user)) => {
             // ネットワーク状態を取得
             let network_status = crate::network::iroh::get_network_status()
@@ -152,7 +161,7 @@ pub async fn sign_in(user_id: String) -> Result<AuthResult, AuthError> {
             })
         }
         Ok(None) => Err(AuthError::UserNotFound),
-        Err(e) => Err(AuthError::Storage(e)),
+        Err(e) => Err(AuthError::Storage(e.to_string())), // Convert error to string
     }
 }
 
@@ -187,7 +196,10 @@ pub async fn list_users() -> Result<Vec<UserListItem>, AuthError> {
             if let Some(file_stem) = path.file_stem() {
                 if let Some(user_id) = file_stem.to_str() {
                     // ユーザープロファイルを取得
-                    if let Ok(Some(user)) = crate::storage::iroh_docs_sync::get_user(user_id) {
+                    if let Ok(Some(user)) =
+                        crate::storage::repository::user_repository::get_user(user_id).await
+                    {
+                        // Updated path and added .await
                         users.push(UserListItem {
                             id: user.id,
                             display_name: user.display_name,

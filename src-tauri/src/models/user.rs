@@ -1,4 +1,4 @@
-use crate::storage::HasId;
+use crate::storage::traits::HasId; // Correct path for the trait
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
