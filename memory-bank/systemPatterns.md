@@ -101,6 +101,14 @@ Hooks --> Zustand Stores
 3. 変更がiroh-docsの同期プロトコルによって自動的にマージ
 4. 必要なバイナリデータがiroh-blobsを通じて取得
 
+### 4. 設定保存/取得フロー
+
+1. ユーザーが設定画面で設定を変更（またはアプリが設定を読み込む）
+2. フロントエンドが `update_settings` または `get_settings` Tauri コマンドを呼び出す
+3. Tauri コマンドハンドラが `settings_repository` の関数を呼び出す
+4. `settings_repository` が `iroh-docs` の `settings` Namespace にアクセスし、設定データを保存または取得する
+5. 結果がフロントエンドに返される
+
 ## 技術的決定
 
 ### 1. Tauriの選択理由

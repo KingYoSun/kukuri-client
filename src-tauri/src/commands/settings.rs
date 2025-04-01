@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 use tauri::command;
 
+use crate::models::settings::Settings; // Import Settings from models
+use crate::storage::repository::settings_repository; // Import the repository
+use crate::storage::StorageError as InternalStorageError; // Alias internal storage error
+
 /// 設定エラー
 ///
 /// 設定操作中に発生する可能性のあるエラーを定義します。
@@ -8,7 +12,7 @@ use tauri::command;
 pub enum SettingsError {
     /// ストレージエラー
     #[error("Storage error: {0}")]
-    Storage(String),
+    Storage(InternalStorageError), // Use the actual storage error type
 
     /// 入力検証エラー
     #[error("Validation error: {0}")]
@@ -20,9 +24,10 @@ pub enum SettingsError {
 }
 
 // Implement From<StorageError> for SettingsError
-impl From<crate::storage::StorageError> for SettingsError {
-    fn from(err: crate::storage::StorageError) -> Self {
-        SettingsError::Storage(err.to_string())
+impl From<InternalStorageError> for SettingsError {
+    fn from(err: InternalStorageError) -> Self {
+        // Directly wrap the storage error
+        SettingsError::Storage(err)
     }
 }
 
@@ -36,16 +41,7 @@ impl Serialize for SettingsError {
     }
 }
 
-/// アプリケーション設定
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Settings {
-    pub user_id: Option<String>,
-    pub selected_relays: Vec<String>,
-    pub theme: String,
-    pub language: String,
-    pub autostart: bool,
-    pub notifications: bool,
-}
+// Settings struct is now imported from crate::models::settings
 
 /// 設定更新結果
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,31 +55,16 @@ pub struct SettingsUpdateResult {
 /// アプリケーション設定を取得します。
 #[command]
 pub async fn get_settings(user_id: Option<String>) -> Result<Settings, SettingsError> {
-    // ユーザーIDが指定されている場合はそのユーザーの設定を取得
-    // 指定されていない場合はグローバル設定を取得
-    let settings_key = match &user_id {
-        Some(id) => format!("settings:{}", id),
-        None => "settings:global".to_string(),
-    };
-
-    // ストレージから設定を取得
-    // TODO: Implement settings repository and uncomment
-    // match crate::storage::repository::settings_repository::get_settings(&settings_key).await {
-    match Ok(None) as Result<Option<Settings>, _> {
-        // Placeholder
+    // Use the repository function to get settings
+    match settings_repository::get_settings(user_id.as_deref()).await {
         Ok(Some(settings)) => Ok(settings),
         Ok(None) => {
-            // 設定が存在しない場合はデフォルト設定を返す
-            Ok(Settings {
-                user_id,
-                selected_relays: vec![],
-                theme: "system".to_string(),
-                language: "ja".to_string(),
-                autostart: false,
-                notifications: true,
-            })
+            // If no settings found, return default settings, ensuring user_id is set correctly
+            let mut default_settings = Settings::default();
+            default_settings.user_id = user_id; // Set the provided user_id
+            Ok(default_settings)
         }
-        Err(e) => Err(SettingsError::Storage(e)),
+        Err(e) => Err(SettingsError::from(e)), // Map StorageError to SettingsError
     }
 }
 
@@ -99,49 +80,40 @@ pub async fn update_settings(
     autostart: Option<bool>,
     notifications: Option<bool>,
 ) -> Result<SettingsUpdateResult, SettingsError> {
-    // 設定キーを決定
-    let settings_key = match &user_id {
-        Some(id) => format!("settings:{}", id),
-        None => "settings:global".to_string(),
-    };
+    // Get current settings or default if none exist
+    let mut current_settings = settings_repository::get_settings(user_id.as_deref())
+        .await
+        .map_err(SettingsError::from)? // Map error
+        .unwrap_or_else(|| {
+            let mut default = Settings::default();
+            default.user_id = user_id.clone(); // Ensure user_id is set
+            default
+        });
 
-    // 現在の設定を取得
-    // TODO: Implement settings repository and uncomment
-    // let current_settings = match crate::storage::repository::settings_repository::get_settings(&settings_key).await {
-    let current_settings = match Ok(None) as Result<Option<Settings>, _> {
-        // Placeholder
-        Ok(Some(settings)) => settings,
-        Ok(None) => Settings {
-            user_id: user_id.clone(),
-            selected_relays: vec![],
-            theme: "system".to_string(),
-            language: "ja".to_string(),
-            autostart: false,
-            notifications: true,
-        },
-        Err(e) => return Err(SettingsError::Storage(e)),
-    };
+    // Update fields if provided
+    if let Some(relays) = selected_relays {
+        current_settings.selected_relays = relays;
+    }
+    if let Some(t) = theme {
+        current_settings.theme = t;
+    }
+    if let Some(lang) = language {
+        current_settings.language = lang;
+    }
+    if let Some(auto) = autostart {
+        current_settings.autostart = auto;
+    }
+    if let Some(notif) = notifications {
+        current_settings.notifications = notif;
+    }
 
-    // 提供されたフィールドで設定を更新
-    let updated_settings = Settings {
-        user_id: user_id.clone(),
-        selected_relays: selected_relays.unwrap_or(current_settings.selected_relays),
-        theme: theme.unwrap_or(current_settings.theme),
-        language: language.unwrap_or(current_settings.language),
-        autostart: autostart.unwrap_or(current_settings.autostart),
-        notifications: notifications.unwrap_or(current_settings.notifications),
-    };
-
-    // 更新された設定を保存
-    // TODO: Implement settings repository and uncomment
-    // match crate::storage::repository::settings_repository::save_settings(&settings_key, &updated_settings).await {
-    match Ok(()) as Result<(), _> {
-        // Placeholder
+    // Save the updated settings using the repository function
+    match settings_repository::save_settings(&current_settings).await {
         Ok(_) => Ok(SettingsUpdateResult {
             success: true,
-            message: None,
+            message: Some("Settings updated successfully.".to_string()),
         }),
-        Err(e) => Err(SettingsError::Storage(e)),
+        Err(e) => Err(SettingsError::from(e)), // Map StorageError to SettingsError
     }
 }
 
