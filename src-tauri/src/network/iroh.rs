@@ -76,8 +76,8 @@ pub async fn initialize_network() -> Result<(), String> {
         .await
         .map_err(|e| format!("Failed to create gossip: {}", e))?;
 
-    // ルーターの設定
-    let router = iroh::protocol::Router::builder(endpoint.clone())
+    // ルーターの設定 (未使用のためアンダースコアを追加)
+    let _router = iroh::protocol::Router::builder(endpoint.clone())
         .accept(iroh_gossip::ALPN, gossip.clone())
         .spawn()
         .await

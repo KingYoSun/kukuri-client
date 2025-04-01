@@ -1,12 +1,21 @@
 mod commands;
 mod models;
 pub mod network;
-mod storage;
+
+use tokio::runtime::Runtime;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Tokioランタイムの作成
+    let runtime = Runtime::new().expect("Failed to create Tokio runtime");
+
     // ネットワークの初期化
-    let _ = network::iroh::initialize_network();
+    runtime.block_on(async {
+        // ネットワークの初期化
+        if let Err(e) = network::iroh::initialize_network().await {
+            eprintln!("Failed to initialize network: {}", e);
+        }
+    });
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![

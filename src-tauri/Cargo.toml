@@ -37,8 +37,11 @@ chrono = { version = "0.4.24", features = ["serde"] }
 # iroh関連の依存関係
 iroh = { version = "0.34.0", default-features = false, features = ["metrics"] }
 iroh-gossip = { version = "0.34.0", features = ["net"] }
+iroh-docs = { version = "0.34.0", features = ["engine", "net", "rpc"] } # rpc feature を追加
+iroh-blobs = { version = "0.34.0", features = ["fs-store", "net_protocol"] }
 futures-lite = "2.3"
 blake3 = "1.4"
+async-channel = "2.2.0" # ハイフンに修正
 
 # 非同期処理
 tokio = { version = "1.36.0", features = ["rt", "macros", "time", "sync", "fs"] }
