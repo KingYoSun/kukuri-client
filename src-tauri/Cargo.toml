@@ -42,7 +42,7 @@ iroh-blobs = { version = "0.35.0", features = ["fs-store", "net_protocol"] }
 futures-lite = "2.3"
 blake3 = "1.8.2"
 async-channel = "2.2.0" # ハイフンに修正
-anyhow = "1.0" # Add anyhow
+anyhow = "1.0.98" # Add anyhow
 bytes = "1" # Add bytes
 quic-rpc = { version = "0.20.0", features = ["flume-transport"] } # Update quic-rpc version to 0.20.0
 lazy_static = "1.4.0" # Add lazy_static
