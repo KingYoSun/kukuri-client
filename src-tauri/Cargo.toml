@@ -31,8 +31,8 @@ thiserror = "2.0.12"
 # 暗号化と認証
 base64 = "0.22.1"
 ring = "0.17.0"
-uuid = { version = "1.3.0", features = ["v4", "serde"] }
-chrono = { version = "0.4.24", features = ["serde"] }
+uuid = { version = "1.17.0", features = ["v4", "serde"] }
+chrono = { version = "0.4.41", features = ["serde"] }
 
 # iroh関連の依存関係
 iroh = { version = "0.35.0", default-features = false, features = ["metrics"] }
@@ -50,10 +50,10 @@ lazy_static = "1.4.0" # Add lazy_static
 # 非同期処理
 tokio = { version = "1.45.1", features = ["rt", "macros", "time", "sync", "fs"] }
 tokio-test = { version = "0.4.2", optional = true }
-tempfile = "3.19.1"
+tempfile = "3.20.0"
 mockall = "0.13.1"
 test-log = "0.2.15"
-env_logger = "0.11.2"
+env_logger = "0.11.8"
 
 # SIMD関連の最適化を無効にする
 [profile.dev.package."*"]
