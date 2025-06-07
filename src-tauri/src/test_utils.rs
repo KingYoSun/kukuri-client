@@ -1,6 +1,6 @@
 //! Test utilities for integration tests
 
-use crate::storage::{iroh_node::IrohNode, StorageError};
+use crate::storage::{iroh_node::IrohNode, state::initialize_iroh_for_tests, StorageError};
 use std::path::PathBuf;
 use tempfile::TempDir;
 use tokio::time::{sleep, Duration};
@@ -21,6 +21,9 @@ impl TestEnvironment {
         std::fs::create_dir_all(&node_path).map_err(StorageError::Io)?;
 
         let iroh_node = IrohNode::new(&node_path).await?;
+
+        // Initialize the global state for tests
+        initialize_iroh_for_tests(iroh_node.clone()).await?;
 
         Ok(TestEnvironment {
             temp_dir,

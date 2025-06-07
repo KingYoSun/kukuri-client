@@ -1,11 +1,10 @@
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use bytes::Bytes;
 use iroh_docs::store::Query;
 
 use crate::models::settings::Settings;
 use crate::storage::error::{StorageError, StorageResult};
-use crate::storage::iroh_node::SETTINGS_NAMESPACE_ID; // Will be defined later
-use crate::storage::state::get_iroh_node;
+use crate::storage::state::{get_iroh_node, get_settings_doc};
 
 const SETTINGS_KEY_PREFIX: &[u8] = b"settings:";
 
@@ -22,17 +21,7 @@ fn settings_key(user_id: Option<&str>) -> Vec<u8> {
 /// Saves or updates application settings in the iroh-docs store.
 pub async fn save_settings(settings: &Settings) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle for the settings namespace (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*SETTINGS_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "Settings namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_settings_doc();
 
     let author_id = iroh
         .authors
@@ -53,17 +42,7 @@ pub async fn save_settings(settings: &Settings) -> StorageResult<()> {
 /// Retrieves application settings from the iroh-docs store by user ID (or global).
 pub async fn get_settings(user_id: Option<&str>) -> StorageResult<Option<Settings>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*SETTINGS_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "Settings namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_settings_doc();
 
     let key = settings_key(user_id);
 
@@ -104,18 +83,8 @@ pub async fn get_settings(user_id: Option<&str>) -> StorageResult<Option<Setting
 /// Deletes application settings by setting an empty entry (tombstone).
 pub async fn delete_settings(user_id: Option<&str>) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    let doc = match iroh
-        .docs
-        .open(*SETTINGS_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-    {
-        Some(doc) => doc,
-        None => {
-            // Document doesn't exist, settings are already "deleted"
-            return Ok(());
-        }
-    };
+    let doc = get_settings_doc();
+
     let author_id = iroh
         .authors
         .default()

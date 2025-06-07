@@ -1,11 +1,10 @@
-use anyhow::{anyhow, Context}; // Add anyhow
+use anyhow::anyhow;
 use bytes::Bytes;
 use iroh_docs::store::Query;
 
 use crate::models::user::User;
 use crate::storage::error::{StorageError, StorageResult};
-use crate::storage::iroh_node::USER_NAMESPACE_ID; // Import the namespace ID
-use crate::storage::state::get_iroh_node;
+use crate::storage::state::{get_iroh_node, get_user_doc};
 
 const USER_PROFILE_KEY_PREFIX: &[u8] = b"user_profile:";
 
@@ -19,17 +18,7 @@ fn user_profile_key(user_id: &str) -> Vec<u8> {
 /// This function uses the default author associated with the iroh node.
 pub async fn save_user(user: &User) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle for the user namespace (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*USER_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "User namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_user_doc();
 
     let author_id = iroh
         .authors
@@ -51,17 +40,7 @@ pub async fn save_user(user: &User) -> StorageResult<()> {
 /// Retrieves a user profile from the iroh-docs store by user ID.
 pub async fn get_user(user_id: &str) -> StorageResult<Option<User>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*USER_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "User namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_user_doc();
 
     let key = user_profile_key(user_id);
 
@@ -106,19 +85,8 @@ pub async fn get_user(user_id: &str) -> StorageResult<Option<User>> {
 /// Consider if a hard delete (`docs.del`) is more appropriate depending on requirements.
 pub async fn delete_user(user_id: &str) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle, create if it doesn't exist
-    let doc = match iroh
-        .docs
-        .open(*USER_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-    {
-        Some(doc) => doc,
-        None => {
-            // Document doesn't exist, user is already "deleted"
-            return Ok(());
-        }
-    };
+    let doc = get_user_doc();
+
     let author_id = iroh
         .authors
         .default()

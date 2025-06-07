@@ -1,12 +1,11 @@
-use anyhow::{anyhow, Context}; // Add anyhow
+use anyhow::anyhow;
 use bytes::Bytes;
 use futures_lite::StreamExt;
 use iroh_docs::store::Query;
 
 use crate::models::post::Post;
 use crate::storage::error::{StorageError, StorageResult};
-use crate::storage::iroh_node::POST_NAMESPACE_ID; // Import the namespace ID
-use crate::storage::state::get_iroh_node;
+use crate::storage::state::{get_iroh_node, get_post_doc};
 
 const POST_KEY_PREFIX: &[u8] = b"post:";
 
@@ -20,17 +19,7 @@ fn post_key(post_id: &str) -> Vec<u8> {
 /// This function uses the default author associated with the iroh node.
 pub async fn save_post(post: &Post) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle for the post namespace (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*POST_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "Post namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_post_doc();
 
     let author_id = iroh
         .authors
@@ -52,17 +41,7 @@ pub async fn save_post(post: &Post) -> StorageResult<()> {
 /// Retrieves a post from the iroh-docs store by post ID.
 pub async fn get_post(post_id: &str) -> StorageResult<Option<Post>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*POST_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "Post namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_post_doc();
 
     let key = post_key(post_id);
 
@@ -105,17 +84,7 @@ pub async fn get_post(post_id: &str) -> StorageResult<Option<Post>> {
 /// Deletes a post by setting an empty entry (tombstone).
 pub async fn delete_post(post_id: &str) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*POST_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "Post namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_post_doc();
 
     let author_id = iroh
         .authors
@@ -138,17 +107,7 @@ pub async fn delete_post(post_id: &str) -> StorageResult<()> {
 /// Note: This iterates through all post keys. For large datasets, consider pagination or indexing.
 pub async fn list_posts() -> StorageResult<Vec<Post>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle (should be imported during initialization)
-    let doc = iroh
-        .docs
-        .open(*POST_NAMESPACE_ID)
-        .await
-        .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "Post namespace not imported. Initialize iroh properly.".to_string(),
-            )
-        })?;
+    let doc = get_post_doc();
 
     let mut posts = Vec::new();
 
