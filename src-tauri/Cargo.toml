@@ -48,7 +48,7 @@ quic-rpc = { version = "0.20.0", features = ["flume-transport"] } # Update quic-
 lazy_static = "1.4.0" # Add lazy_static
 
 # 非同期処理
-tokio = { version = "1.36.0", features = ["rt", "macros", "time", "sync", "fs"] }
+tokio = { version = "1.45.1", features = ["rt", "macros", "time", "sync", "fs"] }
 tokio-test = { version = "0.4.2", optional = true }
 tempfile = "3.19.1"
 mockall = "0.13.1"
