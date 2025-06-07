@@ -40,7 +40,7 @@ iroh-gossip = { version = "0.35.0", features = ["net"] }
 iroh-docs = { version = "0.35.0", features = ["engine", "net", "rpc"] } # rpc feature を追加
 iroh-blobs = { version = "0.35.0", features = ["fs-store", "net_protocol"] }
 futures-lite = "2.3"
-blake3 = "1.4"
+blake3 = "1.8.2"
 async-channel = "2.2.0" # ハイフンに修正
 anyhow = "1.0" # Add anyhow
 bytes = "1" # Add bytes
