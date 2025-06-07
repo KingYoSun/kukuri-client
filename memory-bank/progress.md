@@ -2,9 +2,18 @@
 
 ## 現在のステータス
 
-プロジェクトは**基本実装段階**にあります。基本的なアプリケーション構造と主要機能のバックエンドロジック（コマンド）は存在します。**iroh を使用したストレージレイヤーの再実装が完了**し、モック実装から本格的な実装への移行が完了しました。**AppSettings リポジトリの実装と settings コマンドの統合も完了**しました。
+プロジェクトは**基本実装段階**にあります。基本的なアプリケーション構造と主要機能のバックエンドロジック（コマンド）は存在します。**iroh を使用したストレージレイヤーの再実装が完了**し、モック実装から本格的な実装への移行が完了しました。**AppSettings リポジトリの実装と settings コマンドの統合も完了**しました。**ドキュメント変更監視システム（iroh-docs subscribe）の実装も完了**し、リアルタイムデータ同期の基盤が整いました。
 iroh-gossipの実装は進行中ですが、検証が必要です。
-次のステップは、ドキュメント同期/イベント処理の実装、iroh-gossipの実装完成、UIの改善、テストの実装です。
+次のステップは、統合テストと検証、iroh-gossipの実装完成、UIの改善、テストの実装です。
+
+## 🎉 最新の重要な修正
+
+**NamespaceId Runtime Error の解決 (Critical Fix - June 7, 2025)**
+- ✅ **修正完了**: アプリケーション起動時のクラッシュを解決
+- ✅ **原因特定**: `NamespaceId::from_str()` が16進文字列を期待するが、プレーンテキストを渡していた
+- ✅ **解決方法**: blake3ハッシュを使用して決定論的なNamespaceIDを生成
+- ✅ **検証完了**: アプリケーションが正常に起動し、コンパイルエラーなし
+- ✅ **準備完了**: 統合テストとドキュメント監視システムのテストが可能に
 
 ## 完了した作業
 
@@ -49,6 +58,21 @@ iroh-gossipの実装は進行中ですが、検証が必要です。
 - ✅ **iroh-docs ストレージレイヤーの本格実装**
   - ✅ `storage` モジュールの再構築
   - ✅ iroh ノード (`IrohNode`) の初期化と状態管理 (`state.rs`) 実装
+  - ✅ `UserRepository` と `PostRepository` の実装 (CRUD 操作)
+  - ✅ 固定の `NamespaceId` を使用したドキュメント分離
+  - ✅ `AppSettings` リポジトリの実装 (設定管理)
+- ✅ **ドキュメント変更監視システムの実装**
+  - ✅ `DocumentSubscriptionService` の実装
+  - ✅ `iroh-docs` の `Doc::subscribe()` API の統合
+  - ✅ LiveEvent処理: InsertLocal, InsertRemote, ContentReady, NeighborUp/Down, SyncFinished
+  - ✅ Tauriイベントシステムによるフロントエンド通知
+  - ✅ エラーハンドリングと再接続ロジック
+  - ✅ APIの互換性修正（Stream API対応）
+- ✅ **フロントエンド統合**
+  - ✅ `useDocumentEvents` フックの実装
+  - ✅ TypeScriptイベントインターフェースの定義
+  - ✅ ストア（`post-store.ts`, `profile-store.ts`）のネットワーク状態管理
+  - ✅ `App.tsx` でのイベントリスナー統合
   - ✅ Tauri `setup` フックでの iroh ノード初期化
   - ✅ `UserRepository` (`user_repository.rs`) の実装 (CRUD, List)
   - ✅ `PostRepository` (`post_repository.rs`) の実装 (CRUD, List)
@@ -183,9 +207,10 @@ MVPを完成させるために残っている主な作業は以下の通りで�
 
 - ✅ コアユーザーフローが機能する（バックエンドコマンドレベル）
 - ✅ **iroh-docsを使用した実際のデータ同期 (User, Post, Settings CRUD 実装完了)**
+- ✅ **NamespaceId runtime error 修正 - アプリケーション正常起動**
 - 🔄 iroh-gossipを使用した実際のP2P通信 (進行中)
 - 🔄 テストの実装 (進行中)
-- 🔄 **ドキュメント同期とイベント処理の実装** (新規追加、最優先)
+- ✅ **ドキュメント同期とイベント処理の実装** (統合テスト準備完了)
 
 ### M3: MVP完成（目標: 4週間後）
 

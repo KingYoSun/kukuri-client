@@ -54,6 +54,7 @@ tempfile = "3.20.0"
 mockall = "0.13.1"
 test-log = "0.2.15"
 env_logger = "0.11.8"
+tracing = "0.1"
 
 # SIMD関連の最適化を無効にする
 [profile.dev.package."*"]

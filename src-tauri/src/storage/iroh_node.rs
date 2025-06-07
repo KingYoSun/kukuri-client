@@ -12,13 +12,20 @@ const USER_NAMESPACE_STR: &str = "kukuri-user-profiles-v1";
 const POST_NAMESPACE_STR: &str = "kukuri-posts-v1";
 const SETTINGS_NAMESPACE_STR: &str = "kukuri-settings-v1"; // Add settings namespace string
 
-use std::str::FromStr; // Import FromStr trait
-
 lazy_static::lazy_static! {
-    // Use from_str and unwrap (panics on invalid static string, which is acceptable here)
-    pub static ref USER_NAMESPACE_ID: NamespaceId = NamespaceId::from_str(USER_NAMESPACE_STR).expect("Invalid static USER namespace string");
-    pub static ref POST_NAMESPACE_ID: NamespaceId = NamespaceId::from_str(POST_NAMESPACE_STR).expect("Invalid static POST namespace string");
-    pub static ref SETTINGS_NAMESPACE_ID: NamespaceId = NamespaceId::from_str(SETTINGS_NAMESPACE_STR).expect("Invalid static SETTINGS namespace string"); // Add settings namespace ID
+    // Create NamespaceIds by hashing the string identifiers to get deterministic 32-byte arrays
+    pub static ref USER_NAMESPACE_ID: NamespaceId = {
+        let hash = blake3::hash(USER_NAMESPACE_STR.as_bytes());
+        NamespaceId::from(hash.as_bytes())
+    };
+    pub static ref POST_NAMESPACE_ID: NamespaceId = {
+        let hash = blake3::hash(POST_NAMESPACE_STR.as_bytes());
+        NamespaceId::from(hash.as_bytes())
+    };
+    pub static ref SETTINGS_NAMESPACE_ID: NamespaceId = {
+        let hash = blake3::hash(SETTINGS_NAMESPACE_STR.as_bytes());
+        NamespaceId::from(hash.as_bytes())
+    };
 }
 // Type alias for the Flume-based Docs RPC client
 pub(crate) type DocsClient = iroh_docs::rpc::client::docs::Client<

@@ -3,22 +3,28 @@ import { invoke } from '@tauri-apps/api/core';
 import { toast } from '@/hooks/use-toast';
 import { User } from './auth-store';
 
+type NetworkStatus = 'connected' | 'disconnected' | 'unknown';
+
 interface ProfileState {
   profiles: Record<string, User>;
   isLoading: boolean;
   error: string | null;
+  networkStatus: NetworkStatus;
   
   // Actions
   fetchProfile: (userId: string) => Promise<User | null>;
   updateProfile: (userId: string, data: { displayName?: string; bio?: string; avatar?: string }) => Promise<boolean>;
   followUser: (userId: string, targetUserId: string) => Promise<boolean>;
   unfollowUser: (userId: string, targetUserId: string) => Promise<boolean>;
+  refreshUser: (userId: string) => Promise<void>;
+  setNetworkStatus: (status: NetworkStatus) => void;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   profiles: {},
   isLoading: false,
   error: null,
+  networkStatus: 'unknown',
 
   fetchProfile: async (userId: string): Promise<User | null> => {
     // Check if we already have this profile cached
@@ -161,5 +167,31 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       });
       return false;
     }
+  },
+
+  refreshUser: async (userId: string): Promise<void> => {
+    set({ isLoading: true, error: null });
+    try {
+      const profile: User | null = await invoke('get_profile', { userId });
+      
+      if (profile) {
+        set(state => ({ 
+          profiles: { ...state.profiles, [userId]: profile },
+          isLoading: false 
+        }));
+      } else {
+        set({ isLoading: false });
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+      set({ 
+        error: error instanceof Error ? error.message : 'An unknown error occurred', 
+        isLoading: false 
+      });
+    }
+  },
+
+  setNetworkStatus: (status: NetworkStatus) => {
+    set({ networkStatus: status });
   },
 }));

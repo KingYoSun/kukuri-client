@@ -8,6 +8,7 @@ import SettingsPage from "./pages/settings/SettingsPage";
 import AuthPage from "./pages/auth/AuthPage";
 import { Toaster } from "./components/ui/toaster";
 import { useAuthStore } from "./stores/auth-store";
+import { useDocumentEvents } from "./hooks/useDocumentEvents";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -21,6 +22,9 @@ const queryClient = new QueryClient({
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+  
+  // Set up document event listeners for real-time updates
+  useDocumentEvents();
 
   return (
     <QueryClientProvider client={queryClient}>

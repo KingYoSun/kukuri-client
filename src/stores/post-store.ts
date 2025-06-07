@@ -12,17 +12,22 @@ export interface Post {
   createdAt: number;
 }
 
+type NetworkStatus = 'connected' | 'disconnected' | 'unknown';
+
 interface PostState {
   posts: Post[];
   userPosts: Record<string, Post[]>;
   isLoading: boolean;
   error: string | null;
+  networkStatus: NetworkStatus;
   
   // Actions
   fetchPosts: (limit?: number, offset?: number) => Promise<void>;
   fetchUserPosts: (userId: string, limit?: number, offset?: number) => Promise<void>;
   createPost: (content: string) => Promise<void>;
   searchPosts: (query: string, limit?: number) => Promise<Post[]>;
+  refreshPosts: () => Promise<void>;
+  setNetworkStatus: (status: NetworkStatus) => void;
 }
 
 export const usePostStore = create<PostState>((set, get) => ({
@@ -30,6 +35,7 @@ export const usePostStore = create<PostState>((set, get) => ({
   userPosts: {},
   isLoading: false,
   error: null,
+  networkStatus: 'unknown',
 
   fetchPosts: async (limit = 20, offset = 0) => {
     set({ isLoading: true, error: null });
@@ -130,6 +136,15 @@ export const usePostStore = create<PostState>((set, get) => ({
       });
       return [];
     }
+  },
+
+  refreshPosts: async () => {
+    const { fetchPosts } = get();
+    await fetchPosts();
+  },
+
+  setNetworkStatus: (status: NetworkStatus) => {
+    set({ networkStatus: status });
   },
 }));
 

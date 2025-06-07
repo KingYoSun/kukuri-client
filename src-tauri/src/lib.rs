@@ -19,7 +19,16 @@ pub fn run() {
                     // Consider more robust error handling, e.g., notifying the user or exiting
                 } else {
                     println!("Iroh node initialized successfully.");
-                    // You can now proceed with other setup tasks that depend on Iroh
+
+                    // Start document subscription service
+                    println!("Starting document subscription service...");
+                    let mut subscription_service =
+                        crate::storage::events::DocumentSubscriptionService::new();
+                    if let Err(err) = subscription_service.start(handle.clone()).await {
+                        eprintln!("Failed to start document subscription service: {:?}", err);
+                    } else {
+                        println!("Document subscription service started successfully.");
+                    }
                 }
             });
             Ok(()) // Indicate successful setup hook execution
