@@ -19,7 +19,7 @@ fn user_profile_key(user_id: &str) -> Vec<u8> {
 /// This function uses the default author associated with the iroh node.
 pub async fn save_user(user: &User) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle for the user namespace
+    // Get the Doc handle for the user namespace (should be imported during initialization)
     let doc = iroh
         .docs
         .open(*USER_NAMESPACE_ID)
@@ -27,9 +27,10 @@ pub async fn save_user(user: &User) -> StorageResult<()> {
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
         .ok_or_else(|| {
             StorageError::Internal(
-                "User namespace document not found or failed to open".to_string(),
+                "User namespace not imported. Initialize iroh properly.".to_string(),
             )
         })?;
+
     let author_id = iroh
         .authors
         .default()
@@ -38,7 +39,6 @@ pub async fn save_user(user: &User) -> StorageResult<()> {
 
     let key = user_profile_key(&user.id);
     let value_bytes = serde_json::to_vec(user).map_err(StorageError::Serialization)?;
-    // Removed .into(); Vec<u8> implements Into<Bytes>
 
     // Call set_bytes on the Doc handle
     doc.set_bytes(author_id, key, value_bytes)
@@ -51,15 +51,18 @@ pub async fn save_user(user: &User) -> StorageResult<()> {
 /// Retrieves a user profile from the iroh-docs store by user ID.
 pub async fn get_user(user_id: &str) -> StorageResult<Option<User>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle
+    // Get the Doc handle (should be imported during initialization)
     let doc = iroh
         .docs
         .open(*USER_NAMESPACE_ID)
         .await
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
         .ok_or_else(|| {
-            StorageError::NotFound(format!("User namespace not found for user {}", user_id))
+            StorageError::Internal(
+                "User namespace not imported. Initialize iroh properly.".to_string(),
+            )
         })?;
+
     let key = user_profile_key(user_id);
 
     // Query on the Doc handle
@@ -103,17 +106,19 @@ pub async fn get_user(user_id: &str) -> StorageResult<Option<User>> {
 /// Consider if a hard delete (`docs.del`) is more appropriate depending on requirements.
 pub async fn delete_user(user_id: &str) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle
-    let doc = iroh
+    // Get the Doc handle, create if it doesn't exist
+    let doc = match iroh
         .docs
         .open(*USER_NAMESPACE_ID)
         .await
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
-        .ok_or_else(|| {
-            StorageError::Internal(
-                "User namespace document not found or failed to open".to_string(),
-            )
-        })?;
+    {
+        Some(doc) => doc,
+        None => {
+            // Document doesn't exist, user is already "deleted"
+            return Ok(());
+        }
+    };
     let author_id = iroh
         .authors
         .default()

@@ -44,7 +44,8 @@ pub(crate) type AuthorsClient = iroh_docs::rpc::client::authors::Client<
 
 /// Holds the initialized iroh node components and RPC clients.
 #[derive(Clone, Debug)]
-pub(crate) struct IrohNode {
+#[cfg_attr(test, derive())]
+pub struct IrohNode {
     #[allow(dead_code)] // Router might be needed later for direct interaction or shutdown
     router: Router,
     pub(crate) blobs: BlobsClient,
@@ -57,7 +58,8 @@ impl IrohNode {
     /// spawns the router, and returns an `IrohNode` instance containing RPC clients.
     ///
     /// `path`: The root directory for iroh data persistence.
-    pub async fn new(path: PathBuf) -> Result<Self, StorageError> {
+    pub async fn new(path: impl Into<PathBuf>) -> Result<Self, StorageError> {
+        let path = path.into();
         // Ensure the data directory exists
         tokio::fs::create_dir_all(&path)
             .await
@@ -119,8 +121,7 @@ impl IrohNode {
     }
 
     /// Gracefully shuts down the iroh router.
-    #[allow(dead_code)]
-    pub(crate) async fn shutdown(self) -> Result<(), StorageError> {
+    pub async fn shutdown(self) -> Result<(), StorageError> {
         self.router
             .shutdown()
             .await

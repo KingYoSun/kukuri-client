@@ -20,7 +20,7 @@ fn post_key(post_id: &str) -> Vec<u8> {
 /// This function uses the default author associated with the iroh node.
 pub async fn save_post(post: &Post) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle for the post namespace
+    // Get the Doc handle for the post namespace (should be imported during initialization)
     let doc = iroh
         .docs
         .open(*POST_NAMESPACE_ID)
@@ -28,9 +28,10 @@ pub async fn save_post(post: &Post) -> StorageResult<()> {
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
         .ok_or_else(|| {
             StorageError::Internal(
-                "Post namespace document not found or failed to open".to_string(),
+                "Post namespace not imported. Initialize iroh properly.".to_string(),
             )
         })?;
+
     let author_id = iroh
         .authors
         .default()
@@ -39,7 +40,6 @@ pub async fn save_post(post: &Post) -> StorageResult<()> {
 
     let key = post_key(&post.id);
     let value_bytes = serde_json::to_vec(post).map_err(StorageError::Serialization)?;
-    // Removed .into(); Vec<u8> implements Into<Bytes>
 
     // Call set_bytes on the Doc handle
     doc.set_bytes(author_id, key, value_bytes)
@@ -52,15 +52,18 @@ pub async fn save_post(post: &Post) -> StorageResult<()> {
 /// Retrieves a post from the iroh-docs store by post ID.
 pub async fn get_post(post_id: &str) -> StorageResult<Option<Post>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle
+    // Get the Doc handle (should be imported during initialization)
     let doc = iroh
         .docs
         .open(*POST_NAMESPACE_ID)
         .await
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
         .ok_or_else(|| {
-            StorageError::NotFound(format!("Post namespace not found for post {}", post_id))
+            StorageError::Internal(
+                "Post namespace not imported. Initialize iroh properly.".to_string(),
+            )
         })?;
+
     let key = post_key(post_id);
 
     // Query for the latest entry matching the exact key
@@ -102,7 +105,7 @@ pub async fn get_post(post_id: &str) -> StorageResult<Option<Post>> {
 /// Deletes a post by setting an empty entry (tombstone).
 pub async fn delete_post(post_id: &str) -> StorageResult<()> {
     let iroh = get_iroh_node();
-    // Get the Doc handle
+    // Get the Doc handle (should be imported during initialization)
     let doc = iroh
         .docs
         .open(*POST_NAMESPACE_ID)
@@ -110,9 +113,10 @@ pub async fn delete_post(post_id: &str) -> StorageResult<()> {
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
         .ok_or_else(|| {
             StorageError::Internal(
-                "Post namespace document not found or failed to open".to_string(),
+                "Post namespace not imported. Initialize iroh properly.".to_string(),
             )
         })?;
+
     let author_id = iroh
         .authors
         .default()
@@ -134,7 +138,7 @@ pub async fn delete_post(post_id: &str) -> StorageResult<()> {
 /// Note: This iterates through all post keys. For large datasets, consider pagination or indexing.
 pub async fn list_posts() -> StorageResult<Vec<Post>> {
     let iroh = get_iroh_node();
-    // Get the Doc handle
+    // Get the Doc handle (should be imported during initialization)
     let doc = iroh
         .docs
         .open(*POST_NAMESPACE_ID)
@@ -142,14 +146,15 @@ pub async fn list_posts() -> StorageResult<Vec<Post>> {
         .map_err(|e| StorageError::Docs(anyhow!(e)))?
         .ok_or_else(|| {
             StorageError::Internal(
-                "Post namespace document not found or failed to open".to_string(),
+                "Post namespace not imported. Initialize iroh properly.".to_string(),
             )
         })?;
+
     let mut posts = Vec::new();
 
     // Query for the latest entry for all keys starting with the prefix
-    let query = Query::single_latest_per_key().key_prefix(POST_KEY_PREFIX); // Use key_prefix instead of prefix
-                                                                            // Call get_many on the Doc handle
+    let query = Query::single_latest_per_key().key_prefix(POST_KEY_PREFIX);
+    // Call get_many on the Doc handle
     let mut stream = doc
         .get_many(query)
         .await
