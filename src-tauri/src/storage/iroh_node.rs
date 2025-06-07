@@ -95,10 +95,7 @@ impl IrohNode {
         builder = builder.accept(iroh_docs::ALPN, Arc::new(docs.clone()));
 
         // Spawn the router to handle incoming connections for the registered protocols
-        let router = builder
-            .spawn()
-            .await
-            .map_err(StorageError::IrohInitialization)?;
+        let router = builder.spawn();
 
         // Get RPC clients for interacting with the protocols
         let blobs_client = blobs.client().clone();

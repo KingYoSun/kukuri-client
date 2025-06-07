@@ -79,9 +79,7 @@ pub async fn initialize_network() -> Result<(), String> {
     // ルーターの設定 (未使用のためアンダースコアを追加)
     let _router = iroh::protocol::Router::builder(endpoint.clone())
         .accept(iroh_gossip::ALPN, gossip.clone())
-        .spawn()
-        .await
-        .map_err(|e| format!("Failed to create router: {}", e))?;
+        .spawn();
 
     // トピックのマッピングを初期化
     let topics = HashMap::new();
