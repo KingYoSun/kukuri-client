@@ -26,7 +26,8 @@
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
         "fill-labs.dependency-cruiser",
-        "color-highlight.color-highlight"
+        "color-highlight.color-highlight",
+        "indent-rainbow.indent-rainbow"
       ],
       "settings": {
         "editor.formatOnSave": true,
