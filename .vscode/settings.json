@@ -5,6 +5,10 @@
     "source.fixAll.eslint": "explicit"
   },
   "rust-analyzer.cargo.features": ["proc-macro"],
+  "rust-analyzer.cargo.extraEnv": {
+      "MACOSX_DEPLOYMENT_TARGET": "14.6"
+  },
+  "rust-analyzer.cargo.targetDir": "target/analyzer",
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },

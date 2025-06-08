@@ -56,9 +56,16 @@ test-log = "0.2.15"
 env_logger = "0.11.8"
 tracing = "0.1"
 
-# SIMD関連の最適化を無効にする
-[profile.dev.package."*"]
+# 開発時のコンパイル時間短縮設定
+[profile.dev]
 opt-level = 0
+debug = 1  # デバッグ情報を削減
+incremental = true  # インクリメンタルコンパイルを有効化
+codegen-units = 256  # 並列コンパイルを最大化
+
+# 依存関係の最適化レベルを上げて実行時性能を向上
+[profile.dev.package."*"]
+opt-level = 1  # 依存関係は軽い最適化を適用
 
 # リンカーのメモリ使用量を制限する
 [profile.release]
