@@ -33,3 +33,6 @@ references/
 # playwright
 playwright-report
 test-results
+
+# include secrets
+claude.mcp.json
