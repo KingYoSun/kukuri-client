@@ -13,7 +13,11 @@ type DocType = Doc<FlumeConnector<iroh_docs::rpc::proto::Response, iroh_docs::rp
 
 // Global static variables to hold the initialized IrohNode and document handles
 // OnceLock ensures they're initialized only once safely across threads.
+#[cfg(test)]
+pub(crate) static IROH_NODE: OnceLock<IrohNode> = OnceLock::new();
+#[cfg(not(test))]
 static IROH_NODE: OnceLock<IrohNode> = OnceLock::new();
+
 static USER_DOC: OnceLock<DocType> = OnceLock::new();
 static POST_DOC: OnceLock<DocType> = OnceLock::new();
 static SETTINGS_DOC: OnceLock<DocType> = OnceLock::new();
@@ -98,15 +102,17 @@ pub fn clone_iroh_node() -> IrohNode {
 /// This is needed for integration tests that create their own IrohNode instances
 #[cfg(test)]
 pub async fn initialize_iroh_for_tests(node: IrohNode) -> Result<(), StorageError> {
+    // For tests, we need to handle the case where tests run in parallel
+    // and the static state might already be initialized by another test
     if IROH_NODE.get().is_some() {
-        // Already initialized
+        // Already initialized - this is OK for tests
         return Ok(());
     }
 
     // Create or load the required documents
     let (user_doc, post_doc, settings_doc) = create_or_load_documents(&node).await?;
 
-    // Set the documents
+    // Attempt to set the documents - ignore failures as another test might have set them
     let _ = USER_DOC.set(user_doc);
     let _ = POST_DOC.set(post_doc);
     let _ = SETTINGS_DOC.set(settings_doc);

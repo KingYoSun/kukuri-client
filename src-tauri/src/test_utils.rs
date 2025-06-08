@@ -15,27 +15,48 @@ pub struct TestEnvironment {
 impl TestEnvironment {
     /// Create a new test environment with a temporary iroh node
     pub async fn new() -> Result<Self, StorageError> {
-        let temp_dir = tempfile::tempdir().map_err(StorageError::Io)?;
+        // Check if we already have a global node initialized
+        if let Some(existing_node) = crate::storage::state::IROH_NODE.get() {
+            // Reuse the existing node for this test
+            let temp_dir = tempfile::tempdir().map_err(StorageError::Io)?;
+            let node_path = temp_dir.path().join("iroh_node");
+            
+            Ok(TestEnvironment {
+                temp_dir,
+                iroh_node: existing_node.clone(),
+                node_path,
+            })
+        } else {
+            // Create a new node and initialize global state
+            let temp_dir = tempfile::tempdir().map_err(StorageError::Io)?;
+            let node_path = temp_dir.path().join("iroh_node");
+            std::fs::create_dir_all(&node_path).map_err(StorageError::Io)?;
 
-        let node_path = temp_dir.path().join("iroh_node");
-        std::fs::create_dir_all(&node_path).map_err(StorageError::Io)?;
+            let iroh_node = IrohNode::new(&node_path).await?;
 
-        let iroh_node = IrohNode::new(&node_path).await?;
+            // Initialize the global state for tests
+            initialize_iroh_for_tests(iroh_node.clone()).await?;
 
-        // Initialize the global state for tests
-        initialize_iroh_for_tests(iroh_node.clone()).await?;
-
-        Ok(TestEnvironment {
-            temp_dir,
-            iroh_node,
-            node_path,
-        })
+            Ok(TestEnvironment {
+                temp_dir,
+                iroh_node,
+                node_path,
+            })
+        }
     }
 
     /// Shutdown the test environment and clean up resources
     pub async fn shutdown(self) -> Result<(), StorageError> {
-        self.iroh_node.shutdown().await?;
-        Ok(())
+        // Don't shutdown the node if it's the shared global instance
+        // Only the last test should shut it down, but we can't track that easily
+        // So we'll just skip shutdown for shared nodes
+        if crate::storage::state::IROH_NODE.get().is_some() {
+            // This is a shared node, don't shut it down
+            Ok(())
+        } else {
+            self.iroh_node.shutdown().await?;
+            Ok(())
+        }
     }
 
     /// Initialize the global IROH_NODE state for testing
