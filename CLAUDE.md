@@ -1,113 +1,118 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、Claude Code (claude.ai/code) がこのリポジトリのコードを操作する際のガイダンスを提供します。
 
-## Project Overview
+## 基本ルール
 
-Kukuri Client is a distributed social network desktop application built with:
-- **Frontend**: React + TypeScript + Vite + Tailwind CSS
-- **Backend**: Tauri (Rust) with iroh P2P protocols
-- **Architecture**: Local-first, distributed, no central server
+- **言語**: 必ず日本語で回答する
+- **Cargoコマンド**: cargoコマンド実行時のタイムアウトは6000000ms（10分）に設定する
 
-## Essential Commands
+## プロジェクト概要
 
-### Development
+Kukuri Clientは以下の技術で構築された分散型ソーシャルネットワークデスクトップアプリケーションです：
+- **フロントエンド**: React + TypeScript + Vite + Tailwind CSS
+- **バックエンド**: Tauri (Rust) + iroh P2Pプロトコル
+- **アーキテクチャ**: ローカルファースト、分散型、中央サーバーなし
+
+## 必須コマンド
+
+### 開発
 ```bash
-# Install dependencies
+# 依存関係のインストール
 pnpm install
 
-# Start development (opens Tauri window)
+# 開発開始（Tauriウィンドウを開く）
 pnpm tauri dev
 
-# Frontend-only development
+# フロントエンドのみの開発
 pnpm dev
 
-# Build for production
+# プロダクション用ビルド
 pnpm tauri build
 ```
 
-### Testing
+### テスト
 ```bash
-# Run all frontend tests
+# 全フロントエンドテストを実行
 pnpm test
 
-# Run tests in watch mode
+# ウォッチモードでテスト実行
 pnpm test:watch
 
-# Run E2E tests
+# E2Eテスト実行
 pnpm test:e2e
 
-# Run Rust tests
+# Rustテスト実行
 cd src-tauri && cargo test
 
-# Run Rust tests with test utilities
+# テストユーティリティありでRustテスト実行
 cd src-tauri && cargo test --features test-utils
 ```
 
-### Linting & Type Checking
+### リント & 型チェック
 ```bash
-# TypeScript type checking
+# TypeScript型チェック
 pnpm tsc --noEmit
 
-# Rust linting
+# Rustリント
 cd src-tauri && cargo clippy
 ```
 
-## Architecture Overview
+## アーキテクチャ概要
 
-### Data Flow Pattern
-1. **User Action** → React Component → Custom Hook → Service Layer
-2. **Service Layer** → Tauri Command (via `invoke`)
-3. **Rust Command Handler** → Repository → iroh Storage
-4. **Response** → Back through layers to UI
+### データフローパターン
+1. **ユーザーアクション** → Reactコンポーネント → カスタムフック → サービス層
+2. **サービス層** → Tauriコマンド（`invoke`経由）
+3. **Rustコマンドハンドラー** → リポジトリ → irohストレージ
+4. **レスポンス** → 各層を通ってUIに戻る
 
-### Key Architectural Decisions
-- **State Management**: Zustand stores (`src/stores/`)
-- **Data Validation**: Zod schemas in models
-- **P2P Storage**: iroh-docs for synced data, iroh-blobs for files
-- **Event System**: Document events via Tauri's event system
+### 主要なアーキテクチャ決定
+- **状態管理**: Zustandストア（`src/stores/`）
+- **データ検証**: モデル内のZodスキーマ
+- **P2Pストレージ**: 同期データ用iroh-docs、ファイル用iroh-blobs
+- **イベントシステム**: Tauriのイベントシステム経由のドキュメントイベント
 
-### Storage Architecture
-- **Users**: Stored in `users` Namespace
-- **Posts**: Stored in `posts` Namespace  
-- **Settings**: Stored in `settings` Namespace
-- **Binary Data**: Stored in iroh-blobs
+### ストレージアーキテクチャ
+- **ユーザー**: `users`名前空間に保存
+- **投稿**: `posts`名前空間に保存  
+- **設定**: `settings`名前空間に保存
+- **バイナリデータ**: iroh-blobsに保存
 
-### Testing Strategy
-- **Unit Tests**: Components, hooks, models in `tests/unit/`
-- **Integration Tests**: Full workflows in `tests/integration/`
-- **E2E Tests**: User journeys in `tests/e2e/`
+### テスト戦略
+- **ユニットテスト**: `tests/unit/`内のコンポーネント、フック、モデル
+- **統合テスト**: `tests/integration/`内の完全なワークフロー
+- **E2Eテスト**: `tests/e2e/`内のユーザージャーニー
 
-## Common Development Tasks
+## 一般的な開発タスク
 
-### Adding a New Feature
-1. Define TypeScript model in `src/models/`
-2. Create Rust model in `src-tauri/src/models/`
-3. Add Tauri command in `src-tauri/src/commands/`
-4. Create repository in `src-tauri/src/storage/repository/`
-5. Add service in `src/services/`
-6. Create store in `src/stores/`
-7. Build UI components and hooks
+### 新機能の追加
+1. `src/models/`でTypeScriptモデルを定義
+2. `src-tauri/src/models/`でRustモデルを作成
+3. `src-tauri/src/commands/`でTauriコマンドを追加
+4. `src-tauri/src/storage/repository/`でリポジトリを作成
+5. `src/services/`でサービスを追加
+6. `src/stores/`でストアを作成
+7. UIコンポーネントとフックを構築
 
-### Working with iroh
-- Documents are accessed via `IrohNode` in storage layer
-- Each data type has its own Namespace
-- Sync happens automatically via iroh protocols
-- Binary data uses iroh-blobs for content-addressed storage
+### irohでの作業
+- ドキュメントはストレージ層の`IrohNode`経由でアクセス
+- 各データタイプは独自の名前空間を持つ
+- 同期はirohプロトコル経由で自動実行
+- バイナリデータはコンテンツアドレス指定ストレージ用iroh-blobsを使用
 
-### Running Single Tests
+### 単一テストの実行
 ```bash
-# Frontend: Run specific test file
+# フロントエンド: 特定のテストファイルを実行
 pnpm test src/services/storage-service.test.ts
 
-# Rust: Run specific test
+# Rust: 特定のテストを実行
 cd src-tauri && cargo test test_name
 ```
 
-## Important Patterns
+## 重要なパターン
 
-### Tauri Commands
-Commands follow this pattern:
+### Tauriコマンド
+コマンドは以下のパターンに従います：
 ```rust
 #[tauri::command]
 pub async fn command_name(
@@ -116,32 +121,32 @@ pub async fn command_name(
 ) -> Result<ReturnType, String>
 ```
 
-### Repository Pattern
-Each data type has a repository module with standard CRUD operations that interact with iroh-docs.
+### リポジトリパターン
+各データタイプには、iroh-docsと相互作用する標準的なCRUD操作を持つリポジトリモジュールがあります。
 
-### Event Subscriptions
-Document changes emit events that frontend subscribes to via `useDocumentEvents` hook.
+### イベント購読
+ドキュメントの変更は、フロントエンドが`useDocumentEvents`フック経由で購読するイベントを発行します。
 
-## Memory Bank Usage
+## メモリバンク使用法
 
-The `memory-bank/` directory contains important project context and documentation:
+`memory-bank/`ディレクトリには重要なプロジェクトコンテキストとドキュメントが含まれています：
 
-### Available Context Files
-- **projectbrief.md**: MVP requirements and implementation phases
-- **systemPatterns.md**: Architecture patterns and data flow diagrams
-- **techContext.md**: Technical decisions and implementation details
-- **activeContext.md**: Current development status and active tasks
-- **progress.md**: Development progress tracking
-- **productContext.md**: Product vision and user experience goals
+### 利用可能なコンテキストファイル
+- **projectbrief.md**: MVP要件と実装フェーズ
+- **systemPatterns.md**: アーキテクチャパターンとデータフロー図
+- **techContext.md**: 技術的決定と実装詳細
+- **activeContext.md**: 現在の開発状況とアクティブなタスク
+- **progress.md**: 開発進捗追跡
+- **productContext.md**: プロダクトビジョンとユーザーエクスペリエンス目標
 
-### When to Reference Memory Bank
-1. **Before implementing new features**: Check projectbrief.md for alignment with MVP goals
-2. **Architecture decisions**: Reference systemPatterns.md for established patterns
-3. **Data flow implementation**: Follow patterns documented in systemPatterns.md
-4. **Technical choices**: Consult techContext.md for rationale behind technology selections
+### メモリバンクを参照するタイミング
+1. **新機能実装前**: MVP目標との整合性についてprojectbrief.mdを確認
+2. **アーキテクチャ決定**: 確立されたパターンについてsystemPatterns.mdを参照
+3. **データフロー実装**: systemPatterns.mdで文書化されたパターンに従う
+4. **技術的選択**: 技術選択の根拠についてtechContext.mdを参照
 
-### Memory Bank Guidelines
-- Always follow the established patterns in systemPatterns.md
-- Ensure new features align with the MVP scope in projectbrief.md
-- Update progress.md when completing significant milestones
-- Reference activeContext.md for current development priorities
+### メモリバンクガイドライン
+- systemPatterns.mdで確立されたパターンに常に従う
+- 新機能がprojectbrief.mdのMVPスコープと整合することを確認
+- 重要なマイルストーン完了時にprogress.mdを更新
+- 現在の開発優先事項についてactiveContext.mdを参照

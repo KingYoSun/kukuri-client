@@ -6,6 +6,7 @@ use iroh_docs::store::Query;
 use crate::models::post::Post;
 use crate::storage::error::{StorageError, StorageResult};
 use crate::storage::state::{get_iroh_node, get_post_doc};
+use crate::storage::get_default_author_with_retry;
 
 const POST_KEY_PREFIX: &[u8] = b"post:";
 
@@ -21,11 +22,7 @@ pub async fn save_post(post: &Post) -> StorageResult<()> {
     let iroh = get_iroh_node();
     let doc = get_post_doc();
 
-    let author_id = iroh
-        .authors
-        .default()
-        .await
-        .map_err(|e| StorageError::Internal(format!("Failed to get default author: {}", e)))?;
+    let author_id = get_default_author_with_retry(iroh).await?;
 
     let key = post_key(&post.id);
     let value_bytes = serde_json::to_vec(post).map_err(StorageError::Serialization)?;

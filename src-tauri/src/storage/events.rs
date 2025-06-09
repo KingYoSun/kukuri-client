@@ -4,7 +4,7 @@ use anyhow::Result;
 use futures_lite::StreamExt;
 use serde_json::json;
 use std::time::Duration;
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 use tokio::task::JoinHandle;
 use tracing::{debug, error, info, warn};
 
@@ -195,7 +195,7 @@ async fn handle_user_document_event(
 
             // フロントエンドに通知
             app_handle.emit(
-                "user-profile-updated",
+                "document_event:user_created",
                 json!({
                     "type": "local_insert",
                     "key": entry.key().to_vec(),
@@ -213,7 +213,7 @@ async fn handle_user_document_event(
 
             // フロントエンドに通知
             app_handle.emit(
-                "user-profile-updated",
+                "document_event:user_updated",
                 json!({
                     "type": "remote_insert",
                     "key": entry.key().to_vec(),
@@ -293,7 +293,7 @@ async fn handle_post_document_event(
             debug!("Local post entry inserted: {:?}", entry.key());
 
             app_handle.emit(
-                "post-updated",
+                "document_event:post_created",
                 json!({
                     "type": "local_insert",
                     "key": entry.key().to_vec(),
@@ -310,7 +310,7 @@ async fn handle_post_document_event(
             );
 
             app_handle.emit(
-                "post-updated",
+                "document_event:post_updated",
                 json!({
                     "type": "remote_insert",
                     "key": entry.key().to_vec(),

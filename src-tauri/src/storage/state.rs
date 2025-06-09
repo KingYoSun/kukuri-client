@@ -18,8 +18,19 @@ pub(crate) static IROH_NODE: OnceLock<IrohNode> = OnceLock::new();
 #[cfg(not(test))]
 static IROH_NODE: OnceLock<IrohNode> = OnceLock::new();
 
+#[cfg(test)]
+pub(crate) static USER_DOC: OnceLock<DocType> = OnceLock::new();
+#[cfg(not(test))]
 static USER_DOC: OnceLock<DocType> = OnceLock::new();
+
+#[cfg(test)]
+pub(crate) static POST_DOC: OnceLock<DocType> = OnceLock::new();
+#[cfg(not(test))]
 static POST_DOC: OnceLock<DocType> = OnceLock::new();
+
+#[cfg(test)]
+pub(crate) static SETTINGS_DOC: OnceLock<DocType> = OnceLock::new();
+#[cfg(not(test))]
 static SETTINGS_DOC: OnceLock<DocType> = OnceLock::new();
 
 /// Initializes the Iroh node and documents, storing them in global static variables.
@@ -102,6 +113,17 @@ pub fn clone_iroh_node() -> IrohNode {
 /// This is needed for integration tests that create their own IrohNode instances
 #[cfg(test)]
 pub async fn initialize_iroh_for_tests(node: IrohNode) -> Result<(), StorageError> {
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
+    
+    // Static mutex to ensure only one test initializes at a time
+    lazy_static::lazy_static! {
+        static ref INIT_LOCK: Arc<Mutex<()>> = Arc::new(Mutex::new(()));
+    }
+    
+    // Acquire the lock to prevent concurrent initialization
+    let _lock = INIT_LOCK.lock().await;
+    
     // For tests, we need to handle the case where tests run in parallel
     // and the static state might already be initialized by another test
     if IROH_NODE.get().is_some() {
@@ -279,11 +301,12 @@ async fn save_namespace_id(
     let key = format!("{}_namespace_id", doc_type);
     let content = namespace_id.as_bytes();
 
+    // Get the default author with retry logic for tests
+    let author = super::get_default_author_with_retry(node).await?;
+
     meta_doc
         .set_bytes(
-            node.authors.default().await.map_err(|e| {
-                StorageError::Internal(format!("Failed to get default author: {}", e))
-            })?,
+            author,
             key.as_bytes().to_vec(),
             content.to_vec(),
         )

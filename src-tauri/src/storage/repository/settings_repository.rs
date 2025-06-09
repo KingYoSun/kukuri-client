@@ -5,6 +5,7 @@ use iroh_docs::store::Query;
 use crate::models::settings::Settings;
 use crate::storage::error::{StorageError, StorageResult};
 use crate::storage::state::{get_iroh_node, get_settings_doc};
+use crate::storage::get_default_author_with_retry;
 
 const SETTINGS_KEY_PREFIX: &[u8] = b"settings:";
 
@@ -23,11 +24,7 @@ pub async fn save_settings(settings: &Settings) -> StorageResult<()> {
     let iroh = get_iroh_node();
     let doc = get_settings_doc();
 
-    let author_id = iroh
-        .authors
-        .default()
-        .await
-        .map_err(|e| StorageError::Internal(format!("Failed to get default author: {}", e)))?;
+    let author_id = get_default_author_with_retry(iroh).await?;
 
     let key = settings_key(settings.user_id.as_deref());
     let value_bytes = serde_json::to_vec(settings).map_err(StorageError::Serialization)?;

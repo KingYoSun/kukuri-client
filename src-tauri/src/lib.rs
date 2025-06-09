@@ -57,7 +57,12 @@ pub fn run() {
 }
 
 #[cfg(test)]
-mod test_utils;
+#[cfg(feature = "test-utils")]
+pub mod test_utils;
+
+#[cfg(test)]
+#[cfg(feature = "test-utils")]
+pub mod test_setup;
 
 #[cfg(test)]
 mod tests;

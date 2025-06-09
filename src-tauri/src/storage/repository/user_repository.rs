@@ -5,6 +5,7 @@ use iroh_docs::store::Query;
 use crate::models::user::User;
 use crate::storage::error::{StorageError, StorageResult};
 use crate::storage::state::{get_iroh_node, get_user_doc};
+use crate::storage::get_default_author_with_retry;
 
 const USER_PROFILE_KEY_PREFIX: &[u8] = b"user_profile:";
 
@@ -20,11 +21,7 @@ pub async fn save_user(user: &User) -> StorageResult<()> {
     let iroh = get_iroh_node();
     let doc = get_user_doc();
 
-    let author_id = iroh
-        .authors
-        .default()
-        .await
-        .map_err(|e| StorageError::Internal(format!("Failed to get default author: {}", e)))?;
+    let author_id = get_default_author_with_retry(iroh).await?;
 
     let key = user_profile_key(&user.id);
     let value_bytes = serde_json::to_vec(user).map_err(StorageError::Serialization)?;
@@ -58,7 +55,7 @@ pub async fn get_user(user_id: &str) -> StorageResult<Option<User>> {
                 .blobs
                 .read_to_bytes(entry.content_hash())
                 .await
-                .map_err(|e| {
+                .map_err(|_e| {
                     // Handle case where entry exists but content is missing (should ideally not happen with default settings)
                     StorageError::NotFound(format!(
                         "Content not found for user {} (hash: {})",
@@ -87,11 +84,7 @@ pub async fn delete_user(user_id: &str) -> StorageResult<()> {
     let iroh = get_iroh_node();
     let doc = get_user_doc();
 
-    let author_id = iroh
-        .authors
-        .default()
-        .await
-        .map_err(|e| StorageError::Internal(format!("Failed to get default author: {}", e)))?;
+    let author_id = get_default_author_with_retry(iroh).await?;
 
     let key = user_profile_key(user_id);
 

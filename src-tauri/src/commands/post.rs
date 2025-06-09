@@ -111,8 +111,8 @@ pub async fn get_posts(
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<Vec<Post>, PostError> {
-    let limit = limit.unwrap_or(20);
-    let offset = offset.unwrap_or(0);
+    let _limit = limit.unwrap_or(20);
+    let _offset = offset.unwrap_or(0);
 
     crate::storage::repository::post_repository::list_posts()
         .await
@@ -128,8 +128,8 @@ pub async fn get_user_posts(
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<Vec<Post>, PostError> {
-    let limit = limit.unwrap_or(20);
-    let offset = offset.unwrap_or(0);
+    let _limit = limit.unwrap_or(20);
+    let _offset = offset.unwrap_or(0);
 
     crate::storage::repository::post_repository::list_user_posts(&user_id)
         .await // Updated path, added .await, removed unused args
@@ -149,7 +149,7 @@ pub async fn search_posts(query: String, limit: Option<usize>) -> Result<Vec<Pos
         ));
     }
 
-    let limit = limit.unwrap_or(50);
+    let _limit = limit.unwrap_or(50);
 
     // ローカルの投稿からの簡易検索
     // TODO: Implement search functionality in post_repository
